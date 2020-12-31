@@ -155,10 +155,11 @@ When you want to index new files in directory XXX, do the following.
 3. ./cockerq -a SSFIX -stop
 4. Wait for a few seconds (e.g., 15s)
 5. ./cockerq -a SSFIX -start -M 16000
+```
 
 
 ### Final notes
 
-Before you do code search, make sure the server has been started.
+Before you do code search, make sure you've started the server.
 
 
