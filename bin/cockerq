@@ -1,0 +1,77 @@
+#!/bin/bash
+
+#COCKER_HOME=/home/qxin6/cocker
+    
+CP1=$COCKER_HOME/java
+CP1=${CP1}:$COCKER_HOME/lib/ivy.jar
+CP1=${CP1}:$COCKER_HOME/lib/postgresql.jar
+CP1=${CP1}:$COCKER_HOME/lib/asm5.jar
+
+for f in $COCKER_HOME/lib/*
+do
+    fname=$(basename $f)
+    if [[ ${fname} == velocity*.jar ]]
+    then
+	CP1=${CP1}:$f
+    fi
+done
+
+for f in $COCKER_HOME/lib/*
+do
+    fname=$(basename $f)
+    if [[ ${fname} == commons-logging*.jar ]]
+    then
+	CP1=${CP1}:$f
+    fi
+done
+
+for f in $COCKER_HOME/lib/*
+do
+    fname=$(basename $f)
+    if [[ ${fname} == commons-el*.jar ]]
+    then
+	CP1=${CP1}:$f
+    fi
+done
+
+for f in $COCKER_HOME/lib/*
+do
+    fname=$(basename $f)
+    if [[ ${fname} == jsp-api*.jar ]]
+    then
+	CP1=${CP1}:$f
+    fi
+done
+
+for f in $COCKER_HOME/lib/*
+do
+    fname=$(basename $f)
+    if [[ ${fname} == jtar*.jar ]]
+    then
+	CP1=${CP1}:$f
+    fi
+done
+
+CP1=${CP1}:$COCKER_HOME/lib/commons-io-2.4.jar
+
+for f in $COCKER_HOME/lib/*
+do
+    fname=$(basename $f)
+    if [[ ${fname} == lucene*.jar ]]
+    then
+	CP1=${CP1}:$f
+    fi
+done
+
+for f in $COCKER_HOME/lib/eclipsejar/*
+do
+    fname=$(basename $f)
+    if [[ ${fname} == *.jar ]]
+    then
+	CP1=${CP1}:$f
+    fi
+done
+
+#echo ${CP1}
+
+java -cp $CP1 edu.brown.cs.cocker.application.ApplicationChunkQuery $*

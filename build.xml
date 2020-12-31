@@ -1,0 +1,98 @@
+<project name='cocker' default='all'>
+
+   <target name='all' depends='compile'>
+   </target>
+
+   <path id='cocker.classpath'>
+      <pathelement location='java' />
+      <pathelement location='lib/ivy.jar' />
+      <pathelement location='lib/asm5.jar'/>
+      <pathelement location='lib/postgresql.jar' />
+      <pathelement location='lib/commons-io-2.4.jar'/>
+      <fileset dir='lib/eclipsejar' includes='*.jar' />
+      <fileset dir='lib' includes='velocity*.jar' />
+      <fileset dir='lib' includes='commons-logging*.jar' />
+      <fileset dir='lib' includes='commons-el*jar' />
+      <fileset dir='lib' includes='jsp-api*.jar' />
+      <fileset dir='lib' includes='jtar*.jar' />
+      <fileset dir='lib' includes='lucene*.jar' />
+   </path>
+
+   <target name='clean'>
+     <delete dir='java'/>
+   </target>
+
+   <target name='compile'>
+      <mkdir dir='java' />
+      <javac srcdir='javasrc' destdir='java' debug='on' deprecation='on' includeantruntime='false'>
+	 <classpath refid='cocker.classpath' />
+      </javac>
+   </target>
+
+   <path id='jdocsrc'>
+      <pathelement location='./javasrc' />
+      <pathelement location='${PRO}/ivy/javasrc' />
+    </path>
+
+   <target name='doc'>
+      <ant antfile='build.xml' dir='javasrc' target='doc' />
+      <zip zipfile='lib/apidoc.zip' basedir='doc' />
+   </target>
+
+   <target name='stop'>
+      <java classname='edu.brown.cs.cocker.application.ApplicationServerRegulation'
+		fork='true'>
+	  <classpath refid='cocker.classpath' />
+	  <arg value='-stop' />
+      </java>
+   </target>
+
+   <target name='kill'>
+      <java classname='edu.brown.cs.cocker.application.ApplicationServerRegulation'
+		fork='true'>
+	  <classpath refid='cocker.classpath' />
+	  <arg value='-kill' />
+      </java>
+   </target>
+
+   <target name='start'>
+      <java classname='edu.brown.cs.cocker.application.ApplicationServerRegulation'
+		fork='true'>
+	  <classpath refid='cocker.classpath' />
+	  <arg value='-start' />
+      </java>
+   </target>
+
+   <target name='status'>
+      <java classname='edu.brown.cs.cocker.application.ApplicationServerRegulation'
+		fork='true'>
+	  <classpath refid='cocker.classpath' />
+	  <arg value='-talk' />
+      </java>
+   </target>
+
+   <target name='opt'>
+      <java classname='edu.brown.cs.cocker.application.ApplicationServerRegulation'
+		fork='true'>
+	  <classpath refid='cocker.classpath' />
+	  <arg value='-opt' />
+      </java>
+   </target>
+
+   <target name='merobase'>
+      <java classname='edu.brown.cs.cocker.application.ApplicationServerRegulation'
+		fork='true'>
+	  <classpath refid='cocker.classpath' />
+	  <arg value='-m' />
+	  <arg value='/data/people/qx5/merobase-java.zip' />
+      </java>
+   </target>
+
+   <target name='clear'>
+      <java classname='edu.brown.cs.cocker.application.ApplicationSetupDatabase'
+		fork='true'>
+	  <classpath refid='cocker.classpath' />
+	  <arg value='-new' />
+      </java>
+   </target>
+</project>

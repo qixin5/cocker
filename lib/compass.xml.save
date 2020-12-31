@@ -1,0 +1,32 @@
+<compass-core-config xmlns="http://www.compass-project.org/schema/core-config"
+   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+   xsi:schemaLocation="http://www.compass-project.org/schema/core-config http://www.compass-project.org/schema/compass-core-config-2.1.xsd">
+
+   <compass name='default'>
+
+      <connection>
+	 <jdbc dialog='org.apache.lucene.store.jdbc.dialect.PostgreSQLDialect'>
+	    <dataSourceProvider>
+	       <driverManager url='jdbc:postgresql://db.cs.brown.edu/cockerdata'
+			username='spr' password='yGCdDnDC'
+			driverClass='org.postgresql.Driver' />
+	    </dataSourceProvider>
+	 </jdbc>
+      </connection>
+
+      <searchEngine>
+	 <analyzer name='default' type='CustomAnalyzer'
+		analyzerClass='edu.brown.cs.cocker.analysis.JavaCodeAnalyzer' />
+	 <analyzer name='search' type='CustomAnalyzer'
+		analyzerClass='edu.brown.cs.cocker.analysis.JavaCodeAnalyzer' />
+	 <optimizer schedule="false"
+		type="org.compass.core.lucene.engine.optimizer.AggressiveOptimizer" />
+      </searchEngine>
+
+      <mapping>
+	 <resource location='codefile.cpm.xml' />
+      </mapping>
+
+   </compass>
+
+</compass-core-configuration>

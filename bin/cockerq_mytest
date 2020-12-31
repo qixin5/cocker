@@ -1,0 +1,3 @@
+#!/bin/bash
+
+./cockerq -a ssfix -data "slc:4,1" ../test/HelloWorld.java

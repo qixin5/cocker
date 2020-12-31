@@ -1,0 +1,22 @@
+<compass-core-config xmlns="http://www.compass-project.org/schema/core-config"
+   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+   xsi:schemaLocation="http://www.compass-project.org/schema/core-config http://www.compass-project.org/schema/compass-core-config-2.1.xsd">
+
+   <compass name='default'>
+
+      <connection>
+	 <file path='/vol/spr/test-index'/>
+      </connection>
+
+      <searchEngine>
+	 <analyzer name='default' type='CustomAnalyzer'
+		analyzerClass='edu.brown.cs.cocker.analysis.AnalysisJavaCode' />
+	 <analyzer name='search' type='CustomAnalyzer'
+		analyzerClass='edu.brown.cs.cocker.analysis.AnalysisJavaCode' />
+	 <optimizer schedule="false"
+		type="org.compass.core.lucene.engine.optimizer.AggressiveOptimizer" />
+      </searchEngine>
+
+   </compass>
+
+</compass-core-config>

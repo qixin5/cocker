@@ -1,0 +1,313 @@
+/********************************************************************************/
+/*										*/
+/*		AnalysisNormalizer.java 					*/
+/*										*/
+/*	Normalize a code block before getting patterns from it			*/
+/*										*/
+/********************************************************************************/
+/*	Copyright 2015 Brown University -- Qi Xin			      */
+/*********************************************************************************
+ *  Copyright 2015 Brown University, Providence, RI.				 *
+ *										 *
+ *			  All Rights Reserved					 *
+ *										 *
+ *  Permission to use, copy, modify, and distribute this software and its	 *
+ *  documentation for any purpose other than its incorporation into a		 *
+ *  commercial product is hereby granted without fee, provided that the 	 *
+ *  above copyright notice appear in all copies and that both that		 *
+ *  copyright notice and this permission notice appear in supporting		 *
+ *  documentation, and that the name of Brown University not be used in 	 *
+ *  advertising or publicity pertaining to distribution of the software 	 *
+ *  without specific, written prior permission. 				 *
+ *										 *
+ *  BROWN UNIVERSITY DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS		 *
+ *  SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND		 *
+ *  FITNESS FOR ANY PARTICULAR PURPOSE.  IN NO EVENT SHALL BROWN UNIVERSITY	 *
+ *  BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY 	 *
+ *  DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS,		 *
+ *  WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS		 *
+ *  ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE 	 *
+ *  OF THIS SOFTWARE.								 *
+ *										 *
+ ********************************************************************************/
+
+/* RCS: $Header$ */
+
+
+/*********************************************************************************
+ *
+ * $Log$
+ *
+ ********************************************************************************/
+
+package edu.brown.cs.cocker.analysis;
+
+import org.eclipse.jdt.core.dom.*;
+import java.util.*;
+
+
+public class AnalysisNormalizer {
+
+
+/********************************************************************************/
+/*										*/
+/*	Normalization methods							*/
+/*										*/
+/********************************************************************************/
+
+public static ASTNode normalize(ASTNode node)
+{
+   
+   NormalizeVisitor nv = new NormalizeVisitor(node.getAST());
+   node.accept(nv);
+   return node;
+}
+
+
+private static class NormalizeVisitor extends ASTVisitor {
+   AST ast;
+   
+   public NormalizeVisitor(AST ast) {
+      this.ast = ast;
+    }
+   
+   @Override @SuppressWarnings("unchecked")
+   public boolean visit(DoStatement do_stat) {
+      //Add block, if necessary
+      Statement body_stat = do_stat.getBody();
+      if (!(body_stat instanceof Block)) {
+         Block body_block = ast.newBlock();
+         do_stat.setBody(body_block);
+         body_block.statements().add(body_stat);
+       }
+      return true;
+    }
+   
+   @Override @SuppressWarnings("unchecked")
+   public boolean visit(EnhancedForStatement efs) {
+      //Add block, if necessary
+      Statement body_stat = efs.getBody();
+      if (!(body_stat instanceof Block)) {
+         Block body_block = ast.newBlock();
+         efs.setBody(body_block);
+         body_block.statements().add(body_stat);
+       }
+      return true;
+    }
+   
+   @Override @SuppressWarnings("unchecked")
+   public boolean visit(ForStatement for_stat) {
+      //Add block, if necessary
+      Statement body_stat = for_stat.getBody();
+      if (!(body_stat instanceof Block)) {
+         Block body_block = ast.newBlock();
+         for_stat.setBody(body_block);
+         body_block.statements().add(body_stat);
+       }
+      return true;
+    }
+   
+   @Override @SuppressWarnings("unchecked")
+   public boolean visit(IfStatement if_stat) {
+      //Add block, if necessary
+      Statement then_stat = if_stat.getThenStatement();
+      Statement else_stat = if_stat.getElseStatement();
+      if (!(then_stat instanceof Block)) {
+         Block then_block = ast.newBlock();
+         if_stat.setThenStatement(then_block);
+         then_block.statements().add(then_stat);
+         
+       }
+      if (else_stat != null && !(else_stat instanceof Block)) {
+         Block else_block = ast.newBlock();
+         if_stat.setElseStatement(else_block);
+         else_block.statements().add(else_stat);
+       }
+      return true;
+    }
+   
+   @Override @SuppressWarnings("unchecked")
+   public boolean visit(LabeledStatement label_stat) {
+      //Add block, if necessary
+      Statement body_stat = label_stat.getBody();
+      if (!(body_stat instanceof Block)) {
+         Block body_block = ast.newBlock();
+         label_stat.setBody(body_block);
+         body_block.statements().add(body_stat);
+       }
+      return true;
+    }
+
+    @SuppressWarnings("unchecked")
+   private Block getBlock(List<Statement> tmp_stmt_list) {
+    
+        if (tmp_stmt_list.size() == 1) {
+            Statement tmp_stmt0 = tmp_stmt_list.get(0);
+            if (tmp_stmt0 instanceof Block) { return (Block) tmp_stmt0; }
+        }
+        Block tmp_block = ast.newBlock();
+        for (Statement tmp_stmt : tmp_stmt_list) {
+            Statement tmp_stmt_cp = (Statement) ASTNode.copySubtree(ast, tmp_stmt);
+            tmp_block.statements().add(tmp_stmt_cp);
+        }
+        return tmp_block;
+    }
+   
+   @SuppressWarnings({"rawtypes","unchecked"})
+   @Override public boolean visit(SwitchStatement switch_stat) {
+      //Add block, if necessary                                       
+      List stmt_obj_list = switch_stat.statements();
+      List new_stmt_obj_list = new ArrayList();
+   
+      //Build a new list of statements                                              
+      //Statements in each case branch are grouped into a block                     
+      List<Statement> tmp_stmt_list = null;
+      for (Object stmt_obj : stmt_obj_list) {
+          Statement stmt = (Statement) (stmt_obj);
+          if (stmt instanceof SwitchCase) {
+              if (tmp_stmt_list != null) {
+        	  Block tmp_block = getBlock(tmp_stmt_list);
+        	  new_stmt_obj_list.add(tmp_block);
+              }
+              new_stmt_obj_list.add(stmt);
+              tmp_stmt_list = new ArrayList<Statement>();
+          }
+          else {
+              tmp_stmt_list.add(stmt);
+          }
+      }
+      if (tmp_stmt_list != null) {
+          Block tmp_block = getBlock(tmp_stmt_list);
+          new_stmt_obj_list.add(tmp_block);
+      }
+   
+      //Set new structural property                                                 
+      while (!stmt_obj_list.isEmpty()) {
+          stmt_obj_list.remove(0);
+      }
+      for (Object new_stmt_obj : new_stmt_obj_list) {
+          stmt_obj_list.add(new_stmt_obj);
+      }
+      //switch_stat.setStructuralProperty(SwitchStatement.STATEMENTS_PROPERTY,      
+      //new_stmt_obj_list);                                                         
+      return true;
+    }
+   
+   @Override @SuppressWarnings("unchecked")
+   public boolean visit(WhileStatement while_stat) {
+      //Add block, if necessary
+      Statement body_stat = while_stat.getBody();
+      if (!(body_stat instanceof Block)) {
+         Block body_block = ast.newBlock();
+         while_stat.setBody(body_block);
+         body_block.statements().add(body_stat);
+       }
+      return true;
+    }
+   
+   @Override public boolean visit(Assignment agn) {
+      //a+=b => a=a+b, etc.
+      Assignment.Operator op = agn.getOperator();
+      if (op.equals(Assignment.Operator.ASSIGN)) {
+         return true;
+       }
+      AST ast = agn.getAST();
+      InfixExpression ie = ast.newInfixExpression();
+      InfixExpression.Operator in_op = null;
+      if (op.equals(Assignment.Operator.PLUS_ASSIGN)) {
+         in_op = InfixExpression.Operator.PLUS;
+       }
+      else if (op.equals(Assignment.Operator.MINUS_ASSIGN)) {
+         in_op = InfixExpression.Operator.MINUS;
+       }
+      else if (op.equals(Assignment.Operator.TIMES_ASSIGN)) {
+         in_op = InfixExpression.Operator.TIMES;
+       }
+      else if (op.equals(Assignment.Operator.DIVIDE_ASSIGN)) {
+         in_op = InfixExpression.Operator.DIVIDE;
+       }
+      else if (op.equals(Assignment.Operator.PLUS_ASSIGN)) {
+         in_op = InfixExpression.Operator.PLUS;
+       }
+      else if (op.equals(Assignment.Operator.BIT_AND_ASSIGN)) {
+         in_op = InfixExpression.Operator.AND;
+       }
+      else if (op.equals(Assignment.Operator.BIT_OR_ASSIGN)) {
+         in_op = InfixExpression.Operator.OR;
+       }
+      else if (op.equals(Assignment.Operator.BIT_XOR_ASSIGN)) {
+         in_op = InfixExpression.Operator.XOR;
+       }
+      else if (op.equals(Assignment.Operator.REMAINDER_ASSIGN)) {
+         in_op = InfixExpression.Operator.REMAINDER;
+       }
+      else if (op.equals(Assignment.Operator.LEFT_SHIFT_ASSIGN)) {
+         in_op = InfixExpression.Operator.LEFT_SHIFT;
+       }
+      else if (op.equals(Assignment.Operator.RIGHT_SHIFT_SIGNED_ASSIGN)) {
+         in_op = InfixExpression.Operator.RIGHT_SHIFT_SIGNED;
+       }
+      else {
+         in_op = InfixExpression.Operator.RIGHT_SHIFT_UNSIGNED;
+       }
+      
+      ie.setOperator(in_op);
+      ie.setLeftOperand((Expression) ASTNode.copySubtree(ast, agn.getLeftHandSide()));
+      ie.setRightOperand((Expression) ASTNode.copySubtree(ast, agn.getRightHandSide()));
+      agn.setOperator(Assignment.Operator.ASSIGN);
+      agn.setRightHandSide(ie);
+      return true;
+    }
+   
+   @SuppressWarnings({ "rawtypes", "unchecked" })
+   @Override public boolean visit(VariableDeclarationStatement vds) {
+       Type vds_type = vds.getType();
+       int vds_modifiers = vds.getModifiers();
+       List vds_fragments = vds.fragments();
+       int size = vds_fragments.size();
+       if (size <= 1) { return true; }
+       AST ast = vds.getAST();
+
+       ASTNode par = vds.getParent();
+       //par must be a block                                                         
+       Block par_block = (Block) par;
+       List new_vds_list = new ArrayList();
+       for (int i=0; i<size; i++) {
+	   VariableDeclarationFragment vds_fragment = (VariableDeclarationFragment) vds_fragments.get(i);
+	   VariableDeclarationStatement new_vds = ast.newVariableDeclarationStatement((VariableDeclarationFragment) ASTNode.copySubtree(ast, vds_fragment));
+
+	   new_vds.setType((Type) ASTNode.copySubtree(ast, vds_type));
+	   List new_vds_modifiers_cp = ast.newModifiers(vds_modifiers);
+	   List new_vds_modifiers = new_vds.modifiers();
+	   for (Object new_vds_modifier : new_vds_modifiers_cp) {
+	       new_vds_modifiers.add(new_vds_modifier);
+	   }
+	   
+	   new_vds_list.add(new_vds);
+       }
+       List par_block_stats = par_block.statements();
+       int par_block_stats_size = par_block_stats.size();
+       int index = -1;
+       for (int i=0; i<par_block_stats_size; i++) {
+	   if (vds == par_block_stats.get(i)) { index = i; break; }
+       }
+       assert (index != -1);
+       for (int i=size-1; i>=0; i--) {
+	   if (i == size-1) { par_block_stats.set(index, new_vds_list.get(i)); }
+	   else { par_block_stats.add(index, new_vds_list.get(i)); }
+       }
+       return true;
+    }
+   
+} // end of inner class NormalizeVisitor
+
+
+
+
+
+} // end of class AnalysisNormlizer.java
+
+
+/* end of AnalysisNormalizer.java */
+
+
