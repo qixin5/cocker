@@ -12,8 +12,8 @@ public class IndexComponent
 	node_list = new ArrayList<ASTNode>();
     }
 
-    public IndexComponent(List<ASTNode> node_list) {
-	this.node_list = node_list;
+    public IndexComponent(List<ASTNode> nodelist) {
+        this.node_list = nodelist;
     }
 
     public void addNode(ASTNode node) { node_list.add(node); }

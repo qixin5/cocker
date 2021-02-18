@@ -33,6 +33,7 @@ Control+D
 
 2. Update PostgreSQL's property file.
 
+Copy Database.props.template to Database.props.
 In Database.props (in cocker), replace dbmspassword with your own password.
 
 
@@ -67,8 +68,8 @@ NOTE: You may see error message including " java.net.UnknownHostException: valer
 5. Use your own index path.
 
 ```
-1. Make sure you have an empty directory named XXX/vol/cocker to save index files.
-2. Modify analysis/src/AnalysisConstants.java by replacing "/home/qxin6" with XXX (your own path) for the definition of INDEX_PATH_PREFIX.
+1. Make sure you have an empty directory named XXX to save index files.
+2. Create a link in COCKER_HOME to this directory called index (ln -s XXX index)
 ```
 
 Note: Use ABSOLUTE path.
@@ -152,9 +153,9 @@ When you want to index new files in directory XXX, do the following.
 ```
 1. cd bin
 2. ./cockerq -a SSFIX -m XXX -M 16000 (suppose the server is running, otherwise add " -start" in the end)
-3. ./cockerq -a SSFIX -stop
+3. ./cockercmd -a SSFIX -stop
 4. Wait for a few seconds (e.g., 15s)
-5. ./cockerq -a SSFIX -start -M 16000
+6. ./cockercmd -a SSFIX -start -M 16000
 ```
 
 

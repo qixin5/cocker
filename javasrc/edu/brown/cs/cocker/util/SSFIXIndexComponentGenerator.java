@@ -28,7 +28,7 @@ public class SSFIXIndexComponentGenerator implements IndexComponentGenerator
 	}
     }
     
-    private List<IndexComponent> getIndexComponentsForStmtObjList(CompilationUnit cu, List stmt_obj_list, int index_k) {
+    private List<IndexComponent> getIndexComponentsForStmtObjList(CompilationUnit cu, List<?> stmt_obj_list, int index_k) {
 	List<IndexComponent> rslt_list = new ArrayList<IndexComponent>();
 	int stmt_list_size = stmt_obj_list.size();
 	if (stmt_list_size == 0) { return rslt_list; }
@@ -72,7 +72,7 @@ public class SSFIXIndexComponentGenerator implements IndexComponentGenerator
     }
 
     private List<IndexComponent> getIndexComponentsForBlock(CompilationUnit cu, Block block, int index_k) {
-	List stmt_obj_list = block.statements();
+	List<?> stmt_obj_list = block.statements();
 	return getIndexComponentsForStmtObjList(cu, stmt_obj_list, index_k);
     }
     
@@ -145,7 +145,7 @@ public class SSFIXIndexComponentGenerator implements IndexComponentGenerator
 	}
 	else if (stmt instanceof SwitchStatement) {
 	    SwitchStatement ss_stmt = (SwitchStatement) stmt;
-	    List stmt_obj_list = ss_stmt.statements();
+	    List<?> stmt_obj_list = ss_stmt.statements();
 	    List<IndexComponent> iclist2 = getIndexComponentsForStmtObjList(cu, stmt_obj_list, index_k);
 	    for (IndexComponent ic2 : iclist2) {
 		rslt_list.add(ic2);
@@ -166,7 +166,7 @@ public class SSFIXIndexComponentGenerator implements IndexComponentGenerator
 	    for (IndexComponent ic2 : iclist2) {
 		rslt_list.add(ic2);
 	    }
-	    List cc_obj_list = try_stmt.catchClauses();
+	    List<?> cc_obj_list = try_stmt.catchClauses();
 	    for (Object cc_obj : cc_obj_list) {
 		CatchClause cc = (CatchClause) cc_obj;
 		List<IndexComponent> iclist3 = getIndexComponentsForStmt(cu, cc.getBody(), index_k);

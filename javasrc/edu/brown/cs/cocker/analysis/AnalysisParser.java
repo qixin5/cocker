@@ -169,24 +169,19 @@ private static class FileData implements JcompExtendedSource {
 
    @Override public ASTNode getAstRootNode() {
       if (ast_node == null) {
-	 int parsetype;
 	 switch (chunk_type) {
 	    default:
 	    case STATEMENTS :
-	       parsetype = ASTParser.K_STATEMENTS;
+               ast_node = JcompAst.parseStatement(file_contents);
 	       break;
 	    case METHOD :
 	    case CLASS :
-	       parsetype = ASTParser.K_CLASS_BODY_DECLARATIONS;
+               ast_node = JcompAst.parseDeclarations(file_contents);
 	       break;
 	    case FILE :
-	       parsetype = ASTParser.K_COMPILATION_UNIT;
+               ast_node = JcompAst.parseSourceFile(file_contents);
 	       break;
 	  }
-	 ASTParser parser = ASTParser.newParser(AST.JLS4);
-	 parser.setKind(parsetype);
-	 parser.setSource(file_contents.toCharArray());
-	 ast_node = parser.createAST(null);
        }
       return ast_node;
     }

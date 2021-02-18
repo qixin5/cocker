@@ -2,24 +2,24 @@ package edu.brown.cs.cocker.analysis;
 
 public class CodeToken
 {
-    String text;
-    int property;
+    String token_text;
+    int token_property;
 
     public CodeToken(String text) {
-	this.text = text;
-	this.property = -1; //no property
+	this.token_text = text;
+	this.token_property = -1; //no property
     }
 
     public CodeToken(String text, int property) {
-	this.text = text;
-	this.property = property;
+	this.token_text = text;
+	this.token_property = property;
     }
 
-    public String getText() { return text; }
+    public String getText() { return token_text; }
 
-    public void setText(String text) { this.text = text; }
+    public void setText(String text) { this.token_text = text; }
     
-    public int getProp() { return property; }
+    public int getProp() { return token_property; }
 
-    public void setProp(int property) { this.property = property; }
+    public void setProp(int property) { this.token_property = property; }
 }

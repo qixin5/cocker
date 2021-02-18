@@ -43,7 +43,7 @@
 
 package edu.brown.cs.cocker.server;
 
-import edu.brown.cs.cocker.pandora.IvyElapsedTime;
+import edu.brown.cs.ivy.file.IvyElapsedTime;
 import edu.brown.cs.ivy.xml.IvyXmlWriter;
 
 class ServerStatus {

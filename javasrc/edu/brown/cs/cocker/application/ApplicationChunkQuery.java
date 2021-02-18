@@ -117,15 +117,12 @@ public ApplicationChunkQuery(String [] args)
    search_strategy = null;
 
    scanArgs(args);
-
+   
    if (connection_info.getPort() == 0) {
       AnalysisType anal = AnalysisConstants.Factory.getAnalysisType();
-      connection_info.setPort(anal.getPortNumber());
+      connection_info.setPort(anal.getDefaultPortNumber());
     }
 }
-
-
-
 
 
 
@@ -137,6 +134,8 @@ public ApplicationChunkQuery(String [] args)
 
 private void scanArgs(String [] args)
 {
+   File datapath = null;
+
    for (int i = 0; i < args.length; ++i) {
       if (args[i].startsWith("-")) {
 	 if (args[i].startsWith("-p") && i+1 < args.length) {           // -port <port>
@@ -183,7 +182,15 @@ private void scanArgs(String [] args)
 	    AnalysisConstants.Factory.setAnalysisType(type);
 	    // set port to default for type?
 	  }
-	 else if (args[i].startsWith("-d") && i+1 < args.length) {      // -data <data>
+         else if (args[i].startsWith("-dir") && i+1 < args.length) {    // -dir datapath
+            datapath = new File(args[++i]);
+            AnalysisConstants.Factory.setIndexDirectory(datapath);
+            connection_info.setDatapath(datapath);
+          }
+	 else if (args[i].startsWith("-d") && i+1 < args.length) {      // -data <querydata>
+	    query_data = args[++i];
+	  }
+         else if (args[i].startsWith("-q") && i+1 < args.length) {      // -query <querydata>
 	    query_data = args[++i];
 	  }
 	 else if (args[i].startsWith("-s") && i+1 < args.length) {      // -strategy <strategy>

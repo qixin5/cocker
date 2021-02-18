@@ -89,88 +89,88 @@ public class AnalysisCodeTokenGenerator extends CodeTokenGenerator
 
     /* Produce context code tokens for predicates. */
     public List<CodeToken> getQueryCTs(ASTNode node, int prop) {
-
-	List<CodeToken> ct_list = new ArrayList<CodeToken>();
-	if (node == null) { return ct_list; }
-
-	if ((node instanceof Expression) ||
-	    (node instanceof VariableDeclaration)) {
-
-	    ASTNode parent = node.getParent();
-	    if (parent == null) { //Shouldn't happen.
-		return append(ct_list, getCTs(node, prop));
-	    } 
-
-	    int parent_node_type = parent.getNodeType();
-	    if (parent_node_type == ASTNode.CATCH_CLAUSE) {
-		if (node == ((CatchClause) parent).getException())  {
-		    ct_list.add(new CodeToken("catch", prop));
-		    ct_list.add(new CodeToken("(", prop));
-		    append(ct_list, getCTs(node, prop));
-		    ct_list.add(new CodeToken(")", prop));
-		    return ct_list;
-		}
-	    }
-	    else if (parent_node_type == ASTNode.DO_STATEMENT) {
-		if (node == ((DoStatement) parent).getExpression()) {
-		    ct_list.add(new CodeToken("while", prop));
-		    ct_list.add(new CodeToken("(", prop));
-		    append(ct_list, getCTs(node, prop));
-		    ct_list.add(new CodeToken(")", prop));
-		    return ct_list;
-		}
-	    }
-	    else if (parent_node_type == ASTNode.IF_STATEMENT) {
-		if (node == ((IfStatement) parent).getExpression()) {
-		    ct_list.add(new CodeToken("if", prop));
-		    ct_list.add(new CodeToken("(", prop));
-		    append(ct_list, getCTs(node, prop));
-		    ct_list.add(new CodeToken(")", prop));
-		    return ct_list;
-		}
-	    }
-	    else if (parent_node_type == ASTNode.SWITCH_CASE) {
-		if (node == ((SwitchCase) parent).getExpression()) {
-		    ct_list.add(new CodeToken("case", prop));
-		    append(ct_list, getCTs(node, prop));
-		    ct_list.add(new CodeToken(":", prop));
-		    return ct_list;
-		}
-	    }
-	    else if (parent_node_type == ASTNode.SWITCH_STATEMENT) {
-		if (node == ((SwitchStatement) parent).getExpression()) {
-		    ct_list.add(new CodeToken("switch", prop));
-		    ct_list.add(new CodeToken("(", prop));
-		    append(ct_list, getCTs(node, prop));
-		    ct_list.add(new CodeToken(")", prop));
-		    return ct_list;
-		}
-	    }
-	    else if (parent_node_type == ASTNode.SYNCHRONIZED_STATEMENT) {
-		if (node == ((SynchronizedStatement) parent).getExpression()) {
-		    ct_list.add(new CodeToken("synchronized", prop));
-		    ct_list.add(new CodeToken("(", prop));
-		    append(ct_list, getCTs(node, prop));
-		    ct_list.add(new CodeToken(")", prop));
-		    return ct_list;
-		}
-	    }
-	    else if (parent_node_type == ASTNode.WHILE_STATEMENT) {
-		if (node == ((WhileStatement) parent).getExpression()) {
-		    ct_list.add(new CodeToken("while", prop));
-		    ct_list.add(new CodeToken("(", prop));
-		    append(ct_list, getCTs(node, prop));
-		    ct_list.add(new CodeToken(")", prop));
-		    return ct_list;
-		}
-	    }	    
-
-	    //For all other cases
-	    return getCTs(node, prop);
-	}
-
-	else {
-	    return getCTs(node, prop);
-	}
+       
+       List<CodeToken> ct_list = new ArrayList<CodeToken>();
+       if (node == null) { return ct_list; }
+       
+       if ((node instanceof Expression) ||
+             (node instanceof VariableDeclaration)) {
+          
+          ASTNode parent = node.getParent();
+          if (parent == null) { //Shouldn't happen.
+             return append(ct_list, getCTs(node, prop));
+           } 
+          
+          int parent_node_type = parent.getNodeType();
+          if (parent_node_type == ASTNode.CATCH_CLAUSE) {
+             if (node == ((CatchClause) parent).getException())  {
+        	    ct_list.add(new CodeToken("catch", prop));
+        	    ct_list.add(new CodeToken("(", prop));
+        	    append(ct_list, getCTs(node, prop));
+        	    ct_list.add(new CodeToken(")", prop));
+        	    return ct_list;
+              }
+           }
+          else if (parent_node_type == ASTNode.DO_STATEMENT) {
+             if (node == ((DoStatement) parent).getExpression()) {
+        	    ct_list.add(new CodeToken("while", prop));
+        	    ct_list.add(new CodeToken("(", prop));
+        	    append(ct_list, getCTs(node, prop));
+        	    ct_list.add(new CodeToken(")", prop));
+        	    return ct_list;
+              }
+           }
+          else if (parent_node_type == ASTNode.IF_STATEMENT) {
+             if (node == ((IfStatement) parent).getExpression()) {
+        	    ct_list.add(new CodeToken("if", prop));
+        	    ct_list.add(new CodeToken("(", prop));
+        	    append(ct_list, getCTs(node, prop));
+        	    ct_list.add(new CodeToken(")", prop));
+        	    return ct_list;
+              }
+           }
+          else if (parent_node_type == ASTNode.SWITCH_CASE) {
+             if (((SwitchCase) parent).expressions().contains(node)) {
+                ct_list.add(new CodeToken("case", prop));
+                append(ct_list, getCTs(node, prop));
+                ct_list.add(new CodeToken(":", prop));
+                return ct_list;
+              }
+           }
+          else if (parent_node_type == ASTNode.SWITCH_STATEMENT) {
+             if (node == ((SwitchStatement) parent).getExpression()) {
+                ct_list.add(new CodeToken("switch", prop));
+                ct_list.add(new CodeToken("(", prop));
+                append(ct_list, getCTs(node, prop));
+                ct_list.add(new CodeToken(")", prop));
+                return ct_list;
+              }
+           }
+          else if (parent_node_type == ASTNode.SYNCHRONIZED_STATEMENT) {
+             if (node == ((SynchronizedStatement) parent).getExpression()) {
+                ct_list.add(new CodeToken("synchronized", prop));
+                ct_list.add(new CodeToken("(", prop));
+                append(ct_list, getCTs(node, prop));
+                ct_list.add(new CodeToken(")", prop));
+                return ct_list;
+              }
+           }
+          else if (parent_node_type == ASTNode.WHILE_STATEMENT) {
+             if (node == ((WhileStatement) parent).getExpression()) {
+                ct_list.add(new CodeToken("while", prop));
+                ct_list.add(new CodeToken("(", prop));
+                append(ct_list, getCTs(node, prop));
+                ct_list.add(new CodeToken(")", prop));
+                return ct_list;
+              }
+           }	    
+          
+          //For all other cases
+          return getCTs(node, prop);
+        }
+       
+       else {
+          return getCTs(node, prop);
+        }
     }
 }

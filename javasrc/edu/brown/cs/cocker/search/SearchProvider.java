@@ -67,7 +67,6 @@ import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.document.Document;
 import edu.brown.cs.ivy.file.IvyFile;
 
-import java.net.URISyntaxException;
 
 public class SearchProvider implements AnalysisConstants {
 
@@ -108,21 +107,16 @@ public static synchronized SearchProvider getProvider() throws IOException
 private SearchProvider() throws IOException
 {
    code_analyzer = new AnalysisJavaCode();
-   URI pathuri = null;
-   try {
-      String uriname = AnalysisConstants.Factory.getAnalysisType().getIndexPath();
-      pathuri = new URI(uriname);
-    }
-   catch (URISyntaxException e) {
-      throw new IOException("Bad path",e);
-    }
+   URI pathuri = AnalysisConstants.Factory.getAnalysisType().getIndexURI();
+   
    Path path = Paths.get(pathuri);
    lucene_directory = new NIOFSDirectory(path);
    IndexWriterConfig config = new IndexWriterConfig(code_analyzer);
    lucene_writer = new IndexWriter(lucene_directory,config);
-   // lucene_reader = DirectoryReader.open(lucene_directory);
-   lucene_reader = DirectoryReader.open(lucene_writer,true);
-
+// lucene_reader = DirectoryReader.open(lucene_directory);
+// lucene_reader = DirectoryReader.open(lucene_writer,true);
+   clearReader();
+   
    File file = path.toFile();
    file = new File(file,"write.lock");
    file.deleteOnExit();
@@ -146,6 +140,7 @@ public void createIndex() throws IOException
        Path p = fsd.getDirectory();
        IvyFile.updatePermissions(p,0777);
      }
+    clearReader();
 }
 
 
@@ -155,12 +150,14 @@ public void createIndex() throws IOException
 public void deleteIndex() throws IOException
 {
    lucene_writer.deleteAll();
+   clearReader();
 }
 
 
 
 public SearchContext openContext()
 {
+   clearReader();
    return new SearchContext(lucene_writer);
 }
 
@@ -169,12 +166,13 @@ public void optimizeIndex() throws IOException
 {
    lucene_writer.forceMergeDeletes();
    lucene_writer.commit();
-    Directory d = lucene_writer.getDirectory();
-    if (d instanceof FSDirectory) {
-       FSDirectory fsd = (FSDirectory) d;
-       Path p = fsd.getDirectory();
-       IvyFile.updatePermissions(p,0777);
-     }
+   clearReader();
+   Directory d = lucene_writer.getDirectory();
+   if (d instanceof FSDirectory) {
+      FSDirectory fsd = (FSDirectory) d;
+      Path p = fsd.getDirectory();
+      IvyFile.updatePermissions(p,0777);
+    }
 }
 
 
@@ -205,31 +203,14 @@ public List<SearchResult> search(String searchString,int max)
 public List<SearchResult> search(Query query,int max)
 {
    List<SearchResult> result = new LinkedList<SearchResult>();
-   IndexSearcher searcher = new IndexSearcher(lucene_reader); //Change searcher to be a field?
-
-   /***********************/
-   /*
-   //The Similarity Class is customized
-   searcher.setSimilarity(new DefaultSimilarity() {
-	   public float idf(int docFreq, int numDocs) {
-	       return 1.0f;
-	   }
-       });
-   */
-   /***********************/
-
+   DirectoryReader dr = getReader();
+   if (dr == null) return result;
+      
+   IndexSearcher searcher = new IndexSearcher(dr); //Change searcher to be a field?
+      
    try {
       if (max <= 0) max = 10240;
       ScoreDoc [] hits = searcher.search(query,null,max).scoreDocs;
-      /********************/
-      /*
-      Document doc_48 = searcher.doc(48);
-      System.err.println("DOC 48");
-      System.err.println(doc_48);
-      Explanation explain_48 = searcher.explain(query,48);
-      System.err.println(explain_48);
-      */
-      /********************/
       for (ScoreDoc hit : hits) {
 	 Document hitdoc = searcher.doc(hit.doc);
 	 //hitdoc.get("mloc") can be NULL
@@ -252,6 +233,22 @@ public List<SearchResult> search(Query query,int max)
 }
 
 
+private synchronized void clearReader()
+{
+   lucene_reader = null;
+}
+
+
+private synchronized DirectoryReader getReader()
+{
+   if (lucene_reader == null) {
+      try {
+         lucene_reader = DirectoryReader.open(lucene_writer,true);
+       }
+      catch (IOException e) { }
+    }
+   return lucene_reader;
+}
 
 }	// end of class SearchProvider
 

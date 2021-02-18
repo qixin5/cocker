@@ -43,8 +43,11 @@
 
 package edu.brown.cs.cocker.application;
 
+import java.io.File;
 import java.io.IOException;
+import java.text.DateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 import org.w3c.dom.Element;
@@ -105,11 +108,6 @@ public ApplicationServerRegulation(String [] args)
    memory_size = 0;
    scanArgs(args);
 
-   if (connection_info.getPort() == 0) {
-      AnalysisType anal = AnalysisConstants.Factory.getAnalysisType();
-      connection_info.setPort(anal.getPortNumber());
-    }
-
    client_session = null;
 }
 
@@ -123,6 +121,9 @@ public ApplicationServerRegulation(String [] args)
 
 private void scanArgs(String [] args)
 {
+   File datapath = null;
+   boolean setport = true;
+   
    for (int i = 0; i < args.length; ++i) {
       IvyXmlWriter xw = null;
       if (match1(args[i],"update") && i+2 < args.length) {           // -update <when> <interval>
@@ -140,6 +141,20 @@ private void scanArgs(String [] args)
 	    xw = null;
 	  }
        }
+     else if (match(args[i],"idle") && i+1 < args.length) {             // -idle <interval>
+        try {
+           xw = new IvyXmlWriter();
+           xw.begin("COMMAND");
+           xw.field("CMD","IDLETIME");
+           long ival = Long.parseLong(args[++i]);
+           xw.field("INTERVAL",ival*1000*60);
+           xw.end("COMMAND");
+         }
+        catch (NumberFormatException e) {
+           badArgs();
+           xw = null;
+         }
+      }
       else if (match1(args[i],"blacklist") && i+1 < args.length) {      // -blacklist <file...>
 	 xw = new IvyXmlWriter();
 	 xw.begin("COMMAND");
@@ -220,7 +235,7 @@ private void scanArgs(String [] args)
 	 xw.begin("PING");
 	 xw.end("PING");
        }
-      else if (match(args[i],"Update")) {                                  // -Update   \
+      else if (match(args[i],"Update")) {                                  // -Update  
 	 xw = new IvyXmlWriter();
 	 xw.begin("COMMAND");
 	 xw.field("CMD","UPDATE");
@@ -235,13 +250,19 @@ private void scanArgs(String [] args)
       else if (args[i].startsWith("-p") && i+1 < args.length) {         // -port <port>
 	 try {
 	    connection_info.setPort(Integer.parseInt(args[++i]));
+            setport = false;
 	  }
 	 catch (NumberFormatException e) { badArgs(); }
+       }
+      else if (args[i].startsWith("-d") && i+1 < args.length) {         // -dir <base>
+         datapath = new File(args[++i]);
+         AnalysisConstants.Factory.setIndexDirectory(datapath);
+         connection_info.setDatapath(datapath);
+         setport = false;
        }
       else if (args[i].startsWith("-a") && i+1 < args.length) {         // -analysis <type>
 	 String type = args[++i];
 	 AnalysisConstants.Factory.setAnalysisType(type);
-	 // set port to default for type?
        }
       else if (args[i].startsWith("-M") && i+1 < args.length) {         // -M <memory size in meg
 	 try {
@@ -255,6 +276,11 @@ private void scanArgs(String [] args)
 	 message_queue.add(xw.toString());
 	 xw.close();
        }
+    }
+   
+   if (setport && connection_info.getPort() == 0) {
+      AnalysisType anal = AnalysisConstants.Factory.getAnalysisType();
+      connection_info.setPort(anal.getDefaultPortNumber());
     }
 }
 
@@ -348,7 +374,8 @@ public void displayServerSchedule(Element sked)
    System.out.println("Server Schedule:");
    for (Element jelt : IvyXml.children(sked,"JOB")) {
       System.out.println("Job: " + IvyXml.getAttrString(jelt,"NAME"));
-      System.out.println("\tLast Run: " + IvyXml.getAttrString(jelt,"LASTRUN"));
+      Date d = IvyXml.getAttrDate(jelt,"LASTRUN");
+      System.out.println("\tLast Run: " + DateFormat.getDateInstance().format(d));
       System.out.println("\tUpdate Every " + (IvyXml.getAttrLong(jelt,"INTERVAL")/60/1000) + " minutes");
     }
 }
@@ -395,6 +422,9 @@ public void startServer()
       cmd.append(" edu.brown.cs.cocker.cocker.CockerServer");
       cmd.append(" -port " + connection_info.getPort());
       cmd.append(" -analysis " + AnalysisConstants.Factory.getAnalysisType().toString());
+      if (connection_info.getDataPath() != null) {
+         cmd.append(" -dir " + connection_info.getDataPath());
+       }
 
       // cmd.append(" > /vol/cocker/server_" + AnalysisConstants.Factory.getAnalysisType().toString());
 
@@ -408,9 +438,15 @@ public void startServer()
 	  }
 	 catch (InterruptedException e) { }
 	 try {
-	    client_session = new ServerSession(connection_info);
-	    client_session.close();
-	    return;
+            if (connection_info.getPort() == 0 && connection_info.getDataPath() != null) {
+               File datapath = new File(connection_info.getDataPath());
+               connection_info.setDatapath(datapath);   // updates port when known
+             }
+            if (connection_info.getPort() != 0) {
+               client_session = new ServerSession(connection_info);
+               client_session.close();
+               return;
+             }
 	  }
 	 catch (IOException e) { }
        }

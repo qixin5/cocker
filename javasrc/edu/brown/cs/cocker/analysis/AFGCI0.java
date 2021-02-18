@@ -158,91 +158,93 @@ public class AFGCI0 extends AFG
 	*/
     }
     
+    @SuppressWarnings("unused")
     private List<PatternToken> mergePatternTokenLists(List<PatternToken> pt_list1, List<PatternToken> pt_list2) {
-	int curr_pt_pos = pt_list1.size();
-	for (PatternToken pt2 : pt_list2) {
-	    pt2.setPosition(curr_pt_pos); //Reset the position
-	    curr_pt_pos++;
-	    pt_list1.add(pt2);
-	}
-	return pt_list1;
+        int curr_pt_pos = pt_list1.size();
+        for (PatternToken pt2 : pt_list2) {
+            pt2.setPosition(curr_pt_pos); //Reset the position
+            curr_pt_pos++;
+            pt_list1.add(pt2);
+        }
+        return pt_list1;
     }
 
+    @SuppressWarnings("unused")
     private String getCodeItemString(CodeItem ci) {
-	if (ci == null) { return ""; }
-	StringBuilder sb = new StringBuilder();
-	String cname = ci.getClassName();
-	String mname = ci.getMethodName();
-	List<String> param_names = ci.getParameterNames();
-	List<String> param_type_names = ci.getParameterTypeNames();
-	List<String> method_call_names = ci.getMethodCallNames();
-	List<String> type_names = ci.getTypeNames();
-	List<String> var_names = ci.getVariableNames();
-
-	if (cname != null) { sb.append(cname); }
-	if (mname != null) { sb.append(" " + mname); }
-	if (param_names != null) {
-	    for (String param_name : param_names) {
-		sb.append(" " + param_name);
-	    }
-	}
-	if (param_type_names != null) {
-	    for (String param_type_name : param_type_names) {
-		sb.append(" " + param_type_name);
-	    }
-	}
-	if (method_call_names != null) {
-	    for (String method_call_name : method_call_names) {
-		sb.append(" " + method_call_name);
-	    }
-	}
-	if (type_names != null) {
-	    for (String type_name : type_names) {
-		sb.append(" " + type_name);
-	    }
-	}
-	if (var_names != null) {
-	    for (String var_name : var_names) {
-		sb.append(" " + var_name);
-	    }
-	}
-	return sb.toString();
+        if (ci == null) { return ""; }
+        StringBuilder sb = new StringBuilder();
+        String cname = ci.getClassName();
+        String mname = ci.getMethodName();
+        List<String> param_names = ci.getParameterNames();
+        List<String> param_type_names = ci.getParameterTypeNames();
+        List<String> method_call_names = ci.getMethodCallNames();
+        List<String> type_names = ci.getTypeNames();
+        List<String> var_names = ci.getVariableNames();
+    
+        if (cname != null) { sb.append(cname); }
+        if (mname != null) { sb.append(" " + mname); }
+        if (param_names != null) {
+            for (String param_name : param_names) {
+        	sb.append(" " + param_name);
+            }
+        }
+        if (param_type_names != null) {
+            for (String param_type_name : param_type_names) {
+        	sb.append(" " + param_type_name);
+            }
+        }
+        if (method_call_names != null) {
+            for (String method_call_name : method_call_names) {
+        	sb.append(" " + method_call_name);
+            }
+        }
+        if (type_names != null) {
+            for (String type_name : type_names) {
+        	sb.append(" " + type_name);
+            }
+        }
+        if (var_names != null) {
+            for (String var_name : var_names) {
+        	sb.append(" " + var_name);
+            }
+        }
+        return sb.toString();
     }
 
     static class CodeItemWord implements PatternToken {
 
-	private String text;
-	private int    pos;
-	private int    prop;
+	private String code_text;
+	private int    code_pos;
+	private int    code_prop;
 
 	CodeItemWord(String text, int pos) {
-	    this.text = text;
-	    this.pos = pos;
-	    prop = -1;
+	    this.code_text = text;
+	    this.code_pos = pos;
+	    code_prop = -1;
 	}
 
 	@Override public String getText() {
-	    return text;
+	    return code_text;
 	}
 
 	@Override public int getPosition() {
-	    return pos;
+	    return code_pos;
 	}
 
 	@Override public void setPosition(int pos) {
-	    this.pos = pos;
+	    this.code_pos = pos;
 	}
 
 	@Override public String toString() {
-	    return text + "@" + pos;
+	    return code_text + "@" + code_pos;
 	}
 
 	@Override public int getProp() {
-	    return prop;
+	    return code_prop;
 	}
 
 	@Override public void setProp(int prop) {
-	    this.prop = prop;
+	    this.code_prop = prop;
 	}
     }
 }

@@ -49,7 +49,10 @@ package edu.brown.cs.cocker.analysis;
 import java.util.List;
 import java.util.ArrayList;
 import org.eclipse.jdt.core.dom.*;
+
 import java.lang.reflect.Constructor;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.io.*;
 import edu.brown.cs.ivy.file.IvyFile;
 
@@ -66,7 +69,7 @@ public interface AnalysisConstants
 
 String	SEARCH_FIELD = "code";
 String	DEFAULT_ANALYSIS_TYPE = "KGRAM5CFG3";
-String  INDEX_PATH_PREFIX = "file:///home/qxin6/vol/cocker/cocker-index-";
+String	INDEX_PATH_NAME = "cocker-index-";
 String	DATABASE_NAME_PREFIX = "cocker_";
 int	DEFAULT_PORT_BASE = 10263;
 
@@ -111,19 +114,19 @@ interface PatternTokenizer {
 enum AnalysisType {
 
    //No underscores or hyphens for an ANALTYPE name!
-   KGRAM5CFG3(edu.brown.cs.cocker.analysis.AFG.class, new Integer(5),true),
-   SSFIX(edu.brown.cs.cocker.analysis.AFGK5W.class, new Integer(5),true),
-   SSFIXFULL(edu.brown.cs.cocker.analysis.AFGK5W.class, new Integer(5),true),
-   KGRAM5WORDCFG3(edu.brown.cs.cocker.analysis.AFGK5W.class, new Integer(5),true),
-   KGRAM5WORDCFG5(edu.brown.cs.cocker.analysis.AFGK5W.class, new Integer(5),true),
-   KGRAM5WORDCFG7(edu.brown.cs.cocker.analysis.AFGK5W.class, new Integer(5),true),
-   KGRAM5WORDMD(edu.brown.cs.cocker.analysis.AFGK5W.class, new Integer(5),true),
-   KGRAM5WORDCFG1(edu.brown.cs.cocker.analysis.AFGK5W.class, new Integer(5),true),
-   KGRAM5WORDCFG2(edu.brown.cs.cocker.analysis.AFGK5W.class, new Integer(5),true),
-   KGRAM5WORDCFG4(edu.brown.cs.cocker.analysis.AFGK5W.class, new Integer(5),true),
-   KGRAM3WORDMD(edu.brown.cs.cocker.analysis.AFGK5W.class, new Integer(3),true),
-   KGRAM7WORDMD(edu.brown.cs.cocker.analysis.AFGK5W.class, new Integer(7),true),
-   ITEM0MDONEFIELD(edu.brown.cs.cocker.analysis.AFGCI0.class, new Integer(5),true);
+   KGRAM5CFG3(edu.brown.cs.cocker.analysis.AFG.class, 5,true),
+   SSFIX(edu.brown.cs.cocker.analysis.AFGK5W.class, 5,true),
+   SSFIXFULL(edu.brown.cs.cocker.analysis.AFGK5W.class,5,true),
+   KGRAM5WORDCFG3(edu.brown.cs.cocker.analysis.AFGK5W.class, 5,true),
+   KGRAM5WORDCFG5(edu.brown.cs.cocker.analysis.AFGK5W.class, 5,true),
+   KGRAM5WORDCFG7(edu.brown.cs.cocker.analysis.AFGK5W.class, 5,true),
+   KGRAM5WORDMD(edu.brown.cs.cocker.analysis.AFGK5W.class, 5,true),
+   KGRAM5WORDCFG1(edu.brown.cs.cocker.analysis.AFGK5W.class, 5,true),
+   KGRAM5WORDCFG2(edu.brown.cs.cocker.analysis.AFGK5W.class, 5,true),
+   KGRAM5WORDCFG4(edu.brown.cs.cocker.analysis.AFGK5W.class, 5,true),
+   KGRAM3WORDMD(edu.brown.cs.cocker.analysis.AFGK5W.class, 3,true),
+   KGRAM7WORDMD(edu.brown.cs.cocker.analysis.AFGK5W.class, 7,true),
+   ITEM0MDONEFIELD(edu.brown.cs.cocker.analysis.AFGCI0.class, 5,true);
 
    private Class<? extends PatternTokenizer> pattern_class;
    private Object			     pattern_arg;
@@ -142,8 +145,8 @@ enum AnalysisType {
       s = s.replace("_","");
       s = s.replace("-","");
       for (AnalysisType t : values()) {
-	 if (s == null) s = t.toString();
-	 if (t.toString().toUpperCase().equals(s)) return t;
+         if (s == null) s = t.toString();
+         if (t.toString().toUpperCase().equals(s)) return t;
        }
       return KGRAM5CFG3;
     }
@@ -158,7 +161,8 @@ enum AnalysisType {
        }
       catch (Throwable t) { }
       try {
-	 return pattern_class.newInstance();
+	 return pattern_class.getConstructor().newInstance();
+   //	 return pattern_class.newInstance();
        }
       catch (Throwable t) { t.printStackTrace(); }
       return null;
@@ -167,15 +171,32 @@ enum AnalysisType {
 
    public boolean needsCompilation()			{ return needs_jcomp; }
 
-   public String getIndexPath() {
-      return INDEX_PATH_PREFIX + toString().toLowerCase();
+   public File getIndexPath() {
+      File dir = Factory.getIndexDirectory();
+      String inm = INDEX_PATH_NAME + toString().toLowerCase();
+      File f1 = new File(dir,inm);
+      return f1;
+    }
+   
+   public URI getIndexURI() {
+      try {
+         File f = getIndexPath();
+         String urinm = "file://" + f.getPath().replace(File.separator,"/");
+         URI uri = new URI(urinm);
+         return uri;
+       }
+      catch (URISyntaxException e) { }
+      return null;
     }
 
    public String getDatabaseName() {
-      return DATABASE_NAME_PREFIX + toString().toLowerCase();
+      String s1 = Factory.getIndexDirectory().toString();
+      String s2 = IvyFile.digestString(s1);
+      if (s2.length() > 6) s2 = s2.substring(0,6);
+      return DATABASE_NAME_PREFIX + s2 + "_" + toString().toLowerCase();
     }
 
-   public int getPortNumber() {
+   public int getDefaultPortNumber() {
       return DEFAULT_PORT_BASE + ordinal();
     }
 
@@ -197,9 +218,9 @@ enum AnalysisType {
    }
 
 
-   /* For indexing. 
-      (Trees are RESOLVED if the third argument is passed as TRUE 
-      for analysis method as a enum type.) 
+   /* For indexing.
+      (Trees are RESOLVED if the third argument is passed as TRUE
+      for analysis method as a enum type.)
 
       This is called by AnalysisJavaTokenizer.java to get a list of nodes, then
       the tokenizer scanns the node list to return a list of pattern tokens. */
@@ -235,6 +256,7 @@ enum AnalysisType {
 
 class Factory {
    private static AnalysisType analysis_type = AnalysisType.getType(null);
+   private static File index_directory = null;
 
    public static void setAnalysisType(String type) {
       analysis_type = AnalysisType.getType(type);
@@ -249,6 +271,24 @@ class Factory {
       return analysis_type;
     }
 
+   public static void setIndexDirectory(File dir) {
+      index_directory = dir;
+    }
+   
+   public static File getIndexDirectory() {
+      if (index_directory == null) {
+         String home = System.getenv("COCKER_HOME");
+         File f1 = new File(home);
+         File f2 = new File(f1,"index");
+         try {
+            f2 = f2.getCanonicalFile();
+          }
+         catch (IOException e) { }
+         index_directory = f2;
+       }
+      return index_directory;
+    }
+   
 }	// end of inner class Factory
 
 

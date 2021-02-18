@@ -68,7 +68,7 @@ String DEFAULT_HOSTNAME = "localhost";
 
 String	WEB_HOST_NAME = "bdognom";
 int WEB_HOST_PORT_DELTA = 1000;
-int NUM_WEB_CLIENTS = 10;
+int DEFAULT_NUM_WEB_CLIENTS = 10;
 
 
 

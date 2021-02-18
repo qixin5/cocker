@@ -191,13 +191,12 @@ private static void setupWordSets()
    short_words = new HashMap<String,String>();
    HashSet<String> fnd = new HashSet<String>();
 
-   //String root = "/pro/bubbles";
-   //File f1 = new File(root);
-   //File f2 = new File(f1,"lib");
-   File f = new File("/vol/cocker/"+WORD_LIST_FILE);
+   String home = System.getenv("COCKER_HOME");
+   File f1 = new File(home);
+   File f2 = new File(f1,"lib");
+   File f = new File(f2,WORD_LIST_FILE);
 
-   try {
-      BufferedReader br = new BufferedReader(new FileReader(f));
+   try (BufferedReader br = new BufferedReader(new FileReader(f))) {
       for ( ; ; ) {
 	 String wd = br.readLine();
 	 if (wd == null) break;
@@ -216,7 +215,6 @@ private static void setupWordSets()
 	     }
 	  }
        }
-      br.close();
     }
    catch (IOException e) {
       System.err.println("Problem reading word file: " + e);

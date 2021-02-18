@@ -114,7 +114,10 @@ private ServerFileChangeBroadcaster()
 
    String dbname = AnalysisConstants.Factory.getAnalysisType().getDatabaseName();
    try {
-      IvyDatabase.setProperties("/vol/cocker/db.props");
+      String home = System.getenv("COCKER_HOME");
+      File p1 = new File(home);
+      File p2 = new File(p1,"Database.props");
+      IvyDatabase.setProperties(p2.getPath());
       db_connection = IvyDatabase.openDatabase(dbname);
     }
    catch (SQLException e) {
@@ -433,7 +436,7 @@ public void commit()
 
    if (db_connection != null) {
       try {
-	 PreparedStatement ps1 = db_connection.prepareStatement("INSERT INTO FILES VALUES ( ?, ?)");
+	 PreparedStatement ps1 = db_connection.prepareStatement("INSERT INTO Files VALUES ( ?, ?)");
 	 PreparedStatement ps2 = db_connection.prepareStatement("UPDATE Files SET date = ? WHERE file = ?");
 	 int ct1 = 0;
 	 int ct2 = 0;
@@ -457,11 +460,11 @@ public void commit()
 	 int [] sts = null;
 	 if (ct1 > 0) sts = ps1.executeBatch();
 	 for (int i = 0; i < ct1; ++i) {
-	    System.err.println("COCKER: COMMIT STATUS1 : " + sts[i]);
+	    System.err.println("COCKER: COMMIT STATUS NEW: " + sts[i]);
 	  }
 	 if (ct2 > 0) sts = ps2.executeBatch();
 	 for (int i = 0; i < ct2; ++i) {
-	    System.err.println("COCKER: COMMIT STATUS2 : " + sts[i]);
+	    System.err.println("COCKER: COMMIT STATUS OLD: " + sts[i]);
 	  }
        }
       catch (SQLException e) {

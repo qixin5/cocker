@@ -116,39 +116,39 @@ public class AnalysisCodeWordGenerator implements AnalysisConstants, AnalysisCon
     }
     
     static class CodeWord implements PatternToken {
-
-	private String text;
-	private int    pos;
-	private int    prop;
-
-	CodeWord(String text, int pos) {
-	    this.text = text;
-	    this.pos = pos;
-	    prop = -1;
-	}
-
-	@Override public String getText() {
-	    return text;
-	}
-
-	@Override public int getPosition() {
-	    return pos;
-	}
-
-	@Override public void setPosition(int pos) {
-	    this.pos = pos;
-	}
-	
-	@Override public String toString() {
-	    return text + "@" + pos;
-	}
-
-	@Override public int getProp() {
-	    return prop;
-	}
-
-	@Override public void setProp(int prop) {
-	    this.prop = prop;
-	}
+    
+        private String word_text;
+        private int    word_pos;
+        private int    word_prop;
+    
+        CodeWord(String text, int pos) {
+            this.word_text = text;
+            this.word_pos = pos;
+            word_prop = -1;
+        }
+    
+        @Override public String getText() {
+            return word_text;
+        }
+    
+        @Override public int getPosition() {
+            return word_pos;
+        }
+    
+        @Override public void setPosition(int pos) {
+            this.word_pos = pos;
+        }
+        
+        @Override public String toString() {
+            return word_text + "@" + word_pos;
+        }
+    
+        @Override public int getProp() {
+            return word_prop;
+        }
+    
+        @Override public void setProp(int prop) {
+            this.word_prop = prop;
+        }
     }
 }

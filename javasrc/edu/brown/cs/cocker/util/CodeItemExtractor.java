@@ -3,9 +3,6 @@ package edu.brown.cs.cocker.util;
 import java.util.List;
 import java.util.ArrayList;
 import org.eclipse.jdt.core.dom.*;
-import edu.brown.cs.ivy.jcomp.JcompAst;
-import edu.brown.cs.ivy.jcomp.JcompType;
-import edu.brown.cs.ivy.jcomp.JcompSymbol;
 
 /* Note: The target AST should be RESOLVED already. */
 
@@ -86,7 +83,7 @@ public class CodeItemExtractor
 
 	    class_name = atd.getName().getIdentifier();
 	    method_name = md.getName().getIdentifier();
-	    List params = md.parameters();
+	    List<?> params = md.parameters();
 	    for (Object param_obj : params) {
 		SingleVariableDeclaration svd = (SingleVariableDeclaration) param_obj;
 		param_names.add(svd.getName().getIdentifier());
@@ -157,7 +154,7 @@ public class CodeItemExtractor
 	    method_call_names.add(mi.getName().getIdentifier());
 	    Expression caller = mi.getExpression();
 	    if (caller != null) { visitCallerExpression(caller); }
-	    List arg_objs = mi.arguments();
+	    List<?> arg_objs = mi.arguments();
 	    for (Object arg_obj : arg_objs) { visitExpression((Expression) arg_obj); }
 	    return false;
 	}
@@ -166,7 +163,7 @@ public class CodeItemExtractor
 	    method_call_names.add(smi.getName().getIdentifier());
 	    Name qname = smi.getQualifier();
 	    if (qname != null) { visitName(qname); }
-	    List arg_objs = smi.arguments();
+	    List<?> arg_objs = smi.arguments();
 	    for (Object arg_obj : arg_objs) { visitExpression((Expression) arg_obj); }
 	    return false;
 	}
@@ -311,7 +308,7 @@ public class CodeItemExtractor
 	    if (expr instanceof ThisExpression) { return visit((ThisExpression) expr); }
 	    if (expr instanceof TypeLiteral) { return visit((TypeLiteral) expr); }
 	    if (expr instanceof VariableDeclarationExpression) { return visit((VariableDeclarationExpression) expr); }
-
+        
 	    return false;
 	}
 
@@ -347,7 +344,7 @@ public class CodeItemExtractor
 	}
 
 	@Override public boolean visit(ArrayInitializer ai) {
-	    List expr_objs = ai.expressions();
+	    List<?> expr_objs = ai.expressions();
 	    for (Object expr_obj : expr_objs) {
 		visitExpression((Expression) expr_obj);
 	    }
@@ -373,7 +370,7 @@ public class CodeItemExtractor
 	@Override public boolean visit(ClassInstanceCreation cic) {
 	    visitExpression(cic.getExpression());
 	    visitType(cic.getType());
-	    List arg_objs = cic.arguments();
+	    List<?> arg_objs = cic.arguments();
 	    for (Object arg_obj : arg_objs) {
 		visitExpression((Expression) arg_obj);
 	    }
@@ -396,7 +393,7 @@ public class CodeItemExtractor
 	@Override public boolean visit(InfixExpression ie) {
 	    visitExpression(ie.getLeftOperand());
 	    visitExpression(ie.getRightOperand());
-	    List opd_objs = ie.extendedOperands();
+	    List<?> opd_objs = ie.extendedOperands();
 	    for (Object opd_obj : opd_objs) {
 		visitExpression((Expression) opd_obj);
 	    }
@@ -448,7 +445,7 @@ public class CodeItemExtractor
 
 	@Override public boolean visit(VariableDeclarationExpression vde) {
 	    visitType(vde.getType());
-	    List vdf_objs = vde.fragments();
+	    List<?> vdf_objs = vde.fragments();
 	    for (Object vdf_obj : vdf_objs) {
 		visit((VariableDeclarationFragment) vdf_obj);
 	    }

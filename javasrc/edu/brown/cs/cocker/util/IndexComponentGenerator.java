@@ -2,7 +2,6 @@ package edu.brown.cs.cocker.util;
 
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import java.util.List;
-import java.util.ArrayList;
 
 
 public interface IndexComponentGenerator

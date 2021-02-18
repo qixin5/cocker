@@ -24,22 +24,19 @@ public class ASTNodeLoader
     }
 
     public static ASTNode getASTNode(String fctnt) {
-	if (fctnt == null) { return null; }
-	ASTParser parser = ASTParser.newParser(AST.JLS4);
-	parser.setKind(ASTParser.K_COMPILATION_UNIT);
-	parser.setSource(fctnt.toCharArray());
-	return parser.createAST(null);
+        if (fctnt == null) { return null; }
+        return JcompAst.parseSourceFile(fctnt);
     }
     
     public static ASTNode getResolvedASTNode(File f) {
-	String fpath = f.getAbsolutePath();
-	String fctnt = null;
-	try { fctnt = FileUtils.readFileToString(f, (String)null); }
-	catch (IOException e) {
-	    System.err.println(e);
-	    e.printStackTrace();
-	}
-	return getResolvedASTNode(fpath, fctnt);
+        String fpath = f.getAbsolutePath();
+        String fctnt = null;
+        try { fctnt = FileUtils.readFileToString(f, (String)null); }
+        catch (IOException e) {
+            System.err.println(e);
+            e.printStackTrace();
+        }
+        return getResolvedASTNode(fpath, fctnt);
     }
 
     public static ASTNode getResolvedASTNode(String fpath, String fctnt) {
@@ -57,16 +54,16 @@ public class ASTNodeLoader
     
     private static class ASTSource implements JcompSource
     {
-	String fpath;
-	String ftext;
-
-	public ASTSource(String fpath, String ftext) {
-	    this.fpath = fpath;
-	    this.ftext = ftext;
-	}
-
-	@Override public String getFileContents() { return ftext; }
-
-	@Override public String getFileName() { return fpath; }
+        String file_path;
+        String file_text;
+    
+        public ASTSource(String fpath, String ftext) {
+            this.file_path = fpath;
+            this.file_text = ftext;
+        }
+    
+        @Override public String getFileContents() { return file_text; }
+    
+        @Override public String getFileName() { return file_path; }
     }
 }

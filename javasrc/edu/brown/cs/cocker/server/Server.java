@@ -77,18 +77,19 @@ public class Server implements ServerConstants {
 /*										*/
 /********************************************************************************/
 
-private ServerRequestCallback request_callback;
-private boolean        is_running;
-private ServerOperationsManager     operations_manager;
-private int		   host_port;
-private ServerSocket	  server_socket;
-private ServerDispatchThread  server_thread;
-private ExecutorService       thread_pool;
-private int		   thread_pool_size;
-private Date		  start_date;
-private Date		  end_date;
-private Properties	    server_properties;
+private ServerRequestCallback   request_callback;
+private boolean                 is_running;
+private ServerOperationsManager operations_manager;
+private int		        host_port;
+private ServerSocket	        server_socket;
+private ServerDispatchThread    server_thread;
+private ExecutorService         thread_pool;
+private int		        thread_pool_size;
+private Date		        start_date;
+private Date		        end_date;
+private Properties	        server_properties;
 private File			property_file;
+private int                     web_clients;
 
 
 
@@ -105,6 +106,7 @@ public Server(int port,int threadpoolsize,ServerRequestCallback requestcallback)
    request_callback = requestcallback;
    operations_manager = new ServerOperationsManager(this);
    server_properties = new Properties();
+   web_clients = DEFAULT_NUM_WEB_CLIENTS;
 }
 
 
@@ -164,52 +166,52 @@ private class ServerDispatchThread extends Thread {
    public void run()
    {
       try {
-	 server_socket.setSoTimeout(1*60*1000);
+         server_socket.setSoTimeout(1*60*1000);
        }
       catch (IOException e) { }
-
-      for (int i = 0; i < NUM_WEB_CLIENTS; ++i) {
-	 setupFirewallClient();
+   
+      for (int i = 0; i < web_clients; ++i) {
+         setupFirewallClient();
        }
-
+   
       while (is_running) {
-	 try {
-	    Socket clientSocket = server_socket.accept();
-	    RequestHandler handler = retrieveRequestHandler(clientSocket);
-	    thread_pool.execute(handler);
-	  }
-	 catch (IOException ioe) {}
-	 checkFirewallClients();
+         try {
+            Socket clientSocket = server_socket.accept();
+            RequestHandler handler = retrieveRequestHandler(clientSocket);
+            thread_pool.execute(handler);
+          }
+         catch (IOException ioe) {}
+         checkFirewallClients();
        }
     }
 
    private void setupFirewallClient() {
       try {
-	 Socket s = new Socket(WEB_HOST_NAME,host_port + WEB_HOST_PORT_DELTA);
-	 s.setSoTimeout(2*60*60*1000);
-	 RequestHandler hdlr = retrieveRequestHandler(s);
-	 if (hdlr != null) {
-	    hdlr.start();
-	    firewall_clients.add(hdlr);
-	  }
+         Socket s = new Socket(WEB_HOST_NAME,host_port + WEB_HOST_PORT_DELTA);
+         s.setSoTimeout(2*60*60*1000);
+         RequestHandler hdlr = retrieveRequestHandler(s);
+         if (hdlr != null) {
+            hdlr.start();
+            firewall_clients.add(hdlr);
+          }
        }
       catch (IOException e) {
-	 System.err.println("COCKER: Firewall connection not running: " + e);
+         System.err.println("COCKER: Firewall connection not running: " + e);
        }
     }
 
    private synchronized void checkFirewallClients() {
       int ct = 0;
       for (Iterator<RequestHandler> it = firewall_clients.iterator(); it.hasNext(); ) {
-	 RequestHandler hdlr = it.next();
-	 if (hdlr.isActive()) ++ct;
-	 else it.remove();
+         RequestHandler hdlr = it.next();
+         if (hdlr.isActive()) ++ct;
+         else it.remove();
        }
-      if (ct < NUM_WEB_CLIENTS) {
-	 System.err.println("COCKER: Reconnect to firewall " + (NUM_WEB_CLIENTS - ct));
-	 for (int i = ct; i < NUM_WEB_CLIENTS; ++i) {
-	    setupFirewallClient();
-	  }
+      if (ct < web_clients) {
+         System.err.println("COCKER: Reconnect to firewall " + (web_clients - ct));
+         for (int i = ct; i < web_clients; ++i) {
+            setupFirewallClient();
+          }
        }
     }
 
@@ -226,6 +228,13 @@ public ServerOperationsManager getOperationsManager()
 public void setPort(int port)
 {
    host_port = port;
+   setProperty("port",host_port);
+}
+
+protected void setWebClients(int ct)
+{
+   web_clients = ct;
+   setProperty("WebClients",web_clients);
 }
 
 
@@ -235,7 +244,7 @@ protected void setProperties(File propertiesfile)
    property_file = propertiesfile;
    server_properties = new Properties();
    try {
-      FileInputStream fis = new FileInputStream(propertiesfile);
+      FileInputStream fis = new FileInputStream(property_file);
       server_properties.load(fis);
       fis.close();
     }
@@ -256,6 +265,19 @@ protected long getLongProperty(String key,long dflt)
    try {
       if (val != null) {
 	 return Long.parseLong(val);
+       }
+    }
+   catch (NumberFormatException e) { }
+   return dflt;
+}
+
+
+protected int getIntProperty(String key,int dflt)
+{
+   String val = getProperty(key);
+   try {
+      if (val != null) {
+	 return Integer.parseInt(val);
        }
     }
    catch (NumberFormatException e) { }
@@ -290,12 +312,23 @@ protected void setRequestCallback(ServerRequestCallback cb)
 }
 
 
+protected ServerRequestCallback getRequestCallback()
+{
+   return request_callback;
+}
+
+
 public void start() throws IOException
 {
    ServerFileChangeBroadcaster.getFscb();
 
    if (is_running) return;
    server_socket = new ServerSocket(host_port,10);
+   if (host_port == 0) {
+      host_port = server_socket.getLocalPort();
+      setProperty("port",host_port);
+    }
+    
    setIsRunning(true);
 
    thread_pool = Executors.newFixedThreadPool(thread_pool_size);

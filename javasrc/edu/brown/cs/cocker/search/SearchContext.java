@@ -136,10 +136,10 @@ public SearchContext(IndexWriter writer)
 public void addFileToIndex(ServerFile file) throws IOException
 {
     String anal_type_str = (anal_type == null) ? "" : anal_type.toString();
-    Reader fr = file.getReader();
+//  Reader fr = file.getReader();
     String fpath = file.getPath();
     File f = new File(fpath);
-    String ftext = IvyFile.loadFile(fr);
+//  String ftext = IvyFile.loadFile(fr);
     CompilationUnit cu = null;
     //try { cu = (CompilationUnit) ASTUtils.getResolvedASTNode(fpath, ftext); }
     try { cu = (CompilationUnit) ASTNodeLoader.getResolvedASTNode(f); }

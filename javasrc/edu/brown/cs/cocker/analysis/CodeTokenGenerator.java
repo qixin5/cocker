@@ -16,23 +16,23 @@ public class CodeTokenGenerator
 	property_map = new HashMap<ASTNode, Integer>();
     }
 
-    public CodeTokenGenerator(Map<ASTNode, Integer> property_map) {
-	this.property_map = property_map;
+    public CodeTokenGenerator(Map<ASTNode, Integer> propertymap) {
+        this.property_map = propertymap;
     }
 
-    public void setPropertyMap(Map<ASTNode, Integer> property_map) {
-	this.property_map = property_map;
+    public void setPropertyMap(Map<ASTNode, Integer> propertymap) {
+        this.property_map = propertymap;
     }
     
     protected int getNewProp(ASTNode node, int default_prop) {
-	Integer new_prop = property_map.get(node);
-	if (new_prop != null) { return new_prop.intValue(); }
-	else { return default_prop; }
+        Integer new_prop = property_map.get(node);
+        if (new_prop != null) { return new_prop.intValue(); }
+        else { return default_prop; }
     }
 
     protected List<CodeToken> append(List<CodeToken> list0, List<CodeToken> list1) {
-	for (CodeToken ct1 : list1) { list0.add(ct1); }
-	return list0;
+        for (CodeToken ct1 : list1) { list0.add(ct1); }
+        return list0;
     }
 
     public List<CodeToken> getCTs(List<?> args, String delim_symbol, int prop) {
@@ -161,13 +161,15 @@ public class CodeTokenGenerator
     }
 
     protected List<CodeToken> getCTs(ArrayType at, int prop) {
-
-	List<CodeToken> ct_list = new ArrayList<CodeToken>();
-	Type component_type = at.getComponentType();
-	append(ct_list, getCTs(component_type, getNewProp(component_type, prop)));
-	ct_list.add(new CodeToken("[", prop));
-	ct_list.add(new CodeToken("]", prop));
-	return ct_list;
+    
+        List<CodeToken> ct_list = new ArrayList<CodeToken>();
+        Type component_type = at.getElementType();
+        append(ct_list, getCTs(component_type, getNewProp(component_type, prop)));
+        for (int i = 0; i < at.getDimensions(); ++i) {
+           ct_list.add(new CodeToken("[", prop));
+           ct_list.add(new CodeToken("]", prop));
+         }
+        return ct_list;
     }
 
     protected List<CodeToken> getCTs(AssertStatement as, int prop) {
@@ -326,17 +328,17 @@ public class CodeTokenGenerator
     }
 
     protected List<CodeToken> getCTs(DoStatement do_stmt, int prop) {
-
-	List<CodeToken> ct_list= new ArrayList<CodeToken>();
-	Statement body_stmt = do_stmt.getBody();
-	Expression exp = do_stmt.getExpression();
-	ct_list.add(new CodeToken("do", prop));
-	append(ct_list, getCTs(body_stmt, getNewProp(body_stmt, prop)));
-	ct_list.add(new CodeToken("while", prop));
-	ct_list.add(new CodeToken("(", prop));
-	append(ct_list, getCTs(exp, getNewProp(exp, prop)));
-	ct_list.add(new CodeToken(")", prop));
-	return ct_list;
+    
+        List<CodeToken> ct_list= new ArrayList<CodeToken>();
+        Statement body_stmt = do_stmt.getBody();
+        Expression exp = do_stmt.getExpression();
+        ct_list.add(new CodeToken("do", prop));
+        append(ct_list, getCTs(body_stmt, getNewProp(body_stmt, prop)));
+        ct_list.add(new CodeToken("while", prop));
+        ct_list.add(new CodeToken("(", prop));
+        append(ct_list, getCTs(exp, getNewProp(exp, prop)));
+        ct_list.add(new CodeToken(")", prop));
+        return ct_list;
     }
 
     protected List<CodeToken> getCTs(EmptyStatement es, int prop) {
@@ -390,11 +392,11 @@ public class CodeTokenGenerator
     }
     
     protected List<CodeToken> getCTs(ExpressionStatement es, int prop) {
-
-	Expression exp = es.getExpression();
-	List<CodeToken> ct_list = getCTs(exp, getNewProp(exp, prop));
-	ct_list.add(new CodeToken(";", prop));
-	return ct_list;
+    
+        Expression exp = es.getExpression();
+        List<CodeToken> ct_list = getCTs(exp, getNewProp(exp, prop));
+        ct_list.add(new CodeToken(";", prop));
+        return ct_list;
     }
 
     protected List<CodeToken> getCTs(FieldAccess fa, int prop) {
@@ -711,10 +713,16 @@ public class CodeTokenGenerator
         }
         else {
             ct_list.add(new CodeToken("case", prop));
-            Expression exp = sc.getExpression();
-            if (exp != null) {
-        	append(ct_list, getCTs(exp, getNewProp(exp, prop)));
-            }
+            int ct = 0;
+            for (Object o : sc.expressions()) {
+               Expression exp = (Expression) o;
+               if (exp != null) {
+                  if (ct++ > 0) {
+                     ct_list.add(new CodeToken(",", prop)); 
+                   }
+                  append(ct_list, getCTs(exp, getNewProp(exp, prop)));
+                }
+             }
             ct_list.add(new CodeToken(":", prop)); 
         }
         return ct_list;

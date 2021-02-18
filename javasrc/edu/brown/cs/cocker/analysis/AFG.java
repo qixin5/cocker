@@ -262,12 +262,12 @@ static class KGram implements PatternToken {
 
    private String kgram_text;
    private int	  kgram_pos;
-   private int    prop;
+   private int    kgram_prop;
 
    KGram(String kgram,int pos,int k) {
       kgram_text = kgram;
       kgram_pos = pos;
-      prop = -1;
+      kgram_prop = -1;
     }
 
    @Override public String getText() {
@@ -287,11 +287,11 @@ static class KGram implements PatternToken {
    }
 
    @Override public int getProp() {
-       return prop;
+       return kgram_prop;
    }
 
    @Override public void setProp(int prop) {
-       this.prop = prop;
+       this.kgram_prop = prop;
    }
     
 } // end of inner class KGram

@@ -43,6 +43,12 @@
 
 package edu.brown.cs.cocker.server;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.util.Properties;
+
+import edu.brown.cs.cocker.cocker.CockerConstants;
+
 public class ServerConnectionInformation {
 
 
@@ -55,6 +61,7 @@ public class ServerConnectionInformation {
 private String cci_hostname;
 private int    cci_port;
 private int    cci_timeout;
+private String cci_datapath;
 
 
 
@@ -69,6 +76,7 @@ public ServerConnectionInformation(String hostname,int port,int timeout)
    cci_hostname = hostname;
    cci_port = port;
    cci_timeout = timeout;
+   cci_datapath = null;
 }
 
 
@@ -97,6 +105,11 @@ public int getTimeout()
 }
 
 
+public String getDataPath()
+{
+   return cci_datapath;
+}
+
 public void setHostname(String hostname)
 {
    this.cci_hostname = hostname;
@@ -112,6 +125,24 @@ public void setPort(int port)
 public void setTimeout(int timeout)
 {
    this.cci_timeout = timeout;
+}
+
+
+public void setDatapath(File datapath)
+{
+   if (datapath == null) cci_datapath = null;
+   else cci_datapath = datapath.getPath();
+   if (cci_port == 0) {
+      File props = new File(datapath,CockerConstants.PROPERTY_FILE_NAME);
+      if (props.exists()) {
+         Properties p = new Properties();
+         try (FileInputStream fis = new FileInputStream(props)) {
+            p.load(fis);
+            cci_port = Integer.parseInt(p.getProperty("port"));
+          }
+         catch (Exception e) { }
+       } 
+    }
 }
 
 

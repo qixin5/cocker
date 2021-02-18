@@ -1,5 +1,27 @@
 <project name='cocker' default='all'>
 
+   <property file='build.properties' />
+   <property name='PRO' value='/pro' />
+   <property name='IVYBIN' value='${PRO}/ivy/java' />
+   <property name='ROSE' value='${PRO}/rose' />
+
+   <available file="./build.properties" type='file' property='setup.done' />
+   <path id='setuppath'>
+      <pathelement location='..' />
+   </path>
+   <path id='rosepath'>
+      <pathelement location='.' />
+   </path>
+   <property name='setupfile' refid='setuppath' />
+   <property name='cockerfile' refid='rosepath' />
+   <target name='setup' unless='setup.done'>
+      <echo file='./build.properties' message="PRO=${setupfile}${line.separator}" />
+      <echo file='./build.properties' message='COCKER=${cockerfile}${line.separator}' append='true' />
+      <mkdir dir='./java/edu/brown/cs/rose' />
+      <property name='PRO' value='{setupfile}' />
+      <property name='COCKER' value='{cockerfile}' />
+   </target>
+
    <target name='all' depends='compile'>
    </target>
 
@@ -22,7 +44,7 @@
      <delete dir='java'/>
    </target>
 
-   <target name='compile'>
+   <target name='compile' depends='setup' >
       <mkdir dir='java' />
       <javac srcdir='javasrc' destdir='java' debug='on' deprecation='on' includeantruntime='false'>
 	 <classpath refid='cocker.classpath' />

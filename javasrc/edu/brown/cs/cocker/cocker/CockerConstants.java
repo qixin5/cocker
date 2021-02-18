@@ -80,7 +80,7 @@ class PropertyFileComputer {
    
 }       // end of inner class PropertyFileComputer
 
-File PROPERTY_FILE = PropertyFileComputer.PROP_FILE;
+String PROPERTY_FILE_NAME = ".cocker"; 
 
 
 

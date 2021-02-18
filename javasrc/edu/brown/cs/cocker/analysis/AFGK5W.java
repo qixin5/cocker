@@ -15,11 +15,11 @@ public class AFGK5W extends AFG
     }
 
     @Override public List<PatternToken> getTokens(ASTNode node) {
-
-	AnalysisCodeTokenGenerator0 ctgen = new AnalysisCodeTokenGenerator0();
-	List<PatternToken> pt_list0 = this.getTokens(node, ctgen);
-	List<PatternToken> pt_list1 = cwgen.getTokens(node);
-	return mergePatternTokenLists(pt_list0, pt_list1);
+    
+        AnalysisCodeTokenGenerator0 ctgen = new AnalysisCodeTokenGenerator0();
+        List<PatternToken> pt_list0 = this.getTokens(node, ctgen);
+        List<PatternToken> pt_list1 = cwgen.getTokens(node);
+        return mergePatternTokenLists(pt_list0, pt_list1);
     }
 
     @Override public List<PatternToken> getTokens(List<ASTNode> node_list) {

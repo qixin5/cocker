@@ -182,7 +182,7 @@ private void scanArgs(String [] args)
 
 private void badArgs()
 {
-   System.err.println("S6: ENGINE: s6firewall");
+   System.err.println("COCKER: cockerfirewall");
    System.exit(1);
 }
 
@@ -224,11 +224,11 @@ private class CockerServer extends Thread {
    CockerServer(int port) {
       super("COCKER_SERVER_ACCEPT");
       try {
-	 server_socket = new ServerSocket(port+port_delta);
+         server_socket = new ServerSocket(port+port_delta);
        }
       catch (IOException e) {
-	 System.err.println("COCKER: FIREWALL: Problem creating web server socket: " + e);
-	 System.exit(1);
+         System.err.println("COCKER: FIREWALL: Problem creating web server socket: " + e);
+         System.exit(1);
        }
       server_queue = new ArrayList<ServerClient>();
       active_clients = new HashSet<ServerClient>();
@@ -329,23 +329,23 @@ private class ClientServer extends Thread {
       super("COCKER_CLIENT_ACCEPT");
       using_server = cs;
       try {
-	 server_socket = new ServerSocket(port);
+         server_socket = new ServerSocket(port);
        }
       catch (IOException e) {
-	 System.err.println("S6: FIREWALL: Problem creating client server socket: " + e);
-	 System.exit(1);
+         System.err.println("S6: FIREWALL: Problem creating client server socket: " + e);
+         System.exit(1);
        }
     }
 
    public void run() {
       try {
-	 for ( ; ; ) {
-	    Socket s = server_socket.accept();
-	    setupClient(s);
-	  }
+         for ( ; ; ) {
+            Socket s = server_socket.accept();
+            setupClient(s);
+          }
        }
       catch (IOException e) {
-	 System.err.println("S6: FIREWALL: Problem with client socket accept: " + e);
+         System.err.println("S6: FIREWALL: Problem with client socket accept: " + e);
        }
     }
 
@@ -391,22 +391,22 @@ private class FirewallClient extends IvyXmlReaderThread {
       System.err.println("COCKER: FIREWALL: Sending: " + msg);
       String rslt = null;
       for (int i = 0; i < 10; ++i) {
-	 if (engine_client == null) engine_client = using_server.getActiveClient();
-	 try {
-	    if (engine_client != null) rslt = engine_client.send(msg);
-	    break;
-	  }
-	 catch (IOException e) {
-	    System.err.println("COCKER: I/O Error: " + e);
-	    e.printStackTrace();
-	    using_server.removeActive(engine_client);
-	    engine_client.close();
-	    engine_client = null;
-	  }
+         if (engine_client == null) engine_client = using_server.getActiveClient();
+         try {
+            if (engine_client != null) rslt = engine_client.send(msg);
+            break;
+          }
+         catch (IOException e) {
+            System.err.println("COCKER: I/O Error: " + e);
+            e.printStackTrace();
+            using_server.removeActive(engine_client);
+            engine_client.close();
+            engine_client = null;
+          }
        }
       if (rslt != null) {
-	 rslt = rslt.trim();
-	 print_writer.println(rslt);
+         rslt = rslt.trim();
+         print_writer.println(rslt);
        }
       print_writer.flush();
       System.err.println("S6: FIREWALL: Recieved: " + rslt);
@@ -416,9 +416,9 @@ private class FirewallClient extends IvyXmlReaderThread {
       System.err.println("S6: FIREWALL: Done");
       if (client_socket == null) return;
       try {
-	 client_socket.close();
-	 client_socket = null;
-	 if (engine_client != null) using_server.makeActive(engine_client);
+         client_socket.close();
+         client_socket = null;
+         if (engine_client != null) using_server.makeActive(engine_client);
        }
       catch (IOException e) { }
     }
@@ -458,42 +458,42 @@ private static class ServerClient {
       if (in_use) return null;
       in_use = true;
       try {
-	 String rslt = null;
-
-	 if (engine_socket == null) throw new IOException("Socket closed");
-
-	 System.err.println("FIREWALL: Try sending ping");
-	 engine_socket.setSoTimeout(SOCKET_TIMEOUT_CHECK);
-	 engine_writer.println("<PING/>");
-	 engine_writer.flush();
-	 if (engine_writer.checkError()) throw new IOException("Socket ping error");
-	 rslt = engine_reader.readXml(true);
-	 System.err.println("FIREWALL: Ping response: " + rslt);
-	 if (rslt == null) throw new IOException("Socket error");
-	 if (msg == null) return "OK";
-	 if (engine_writer.checkError()) throw new IOException("Socket after ping error");
-
-	 engine_socket.setSoTimeout(SOCKET_TIMEOUT);
-	 engine_writer.println(msg);
-	 engine_writer.flush();
-	 if (engine_writer.checkError()) throw new IOException("Socket message error");
-	 rslt = engine_reader.readXml();
-	 if (rslt == null) throw new IOException("Null result");
-
-	 return rslt;
+         String rslt = null;
+   
+         if (engine_socket == null) throw new IOException("Socket closed");
+   
+         System.err.println("FIREWALL: Try sending ping");
+         engine_socket.setSoTimeout(SOCKET_TIMEOUT_CHECK);
+         engine_writer.println("<PING/>");
+         engine_writer.flush();
+         if (engine_writer.checkError()) throw new IOException("Socket ping error");
+         rslt = engine_reader.readXml(true);
+         System.err.println("FIREWALL: Ping response: " + rslt);
+         if (rslt == null) throw new IOException("Socket error");
+         if (msg == null) return "OK";
+         if (engine_writer.checkError()) throw new IOException("Socket after ping error");
+   
+         engine_socket.setSoTimeout(SOCKET_TIMEOUT);
+         engine_writer.println(msg);
+         engine_writer.flush();
+         if (engine_writer.checkError()) throw new IOException("Socket message error");
+         rslt = engine_reader.readXml();
+         if (rslt == null) throw new IOException("Null result");
+   
+         return rslt;
        }
       finally {
-	 in_use = false;
+         in_use = false;
        }
     }
 
    void close() {
       System.err.println("ENGINE: FIREWALL: Disconnecting " + engine_socket);
       if (engine_socket != null) {
-	 try {
-	    engine_socket.close();
-	  }
-	 catch (IOException e) { }
+         try {
+            engine_socket.close();
+          }
+         catch (IOException e) { }
        }
       engine_socket = null;
       engine_reader = null;

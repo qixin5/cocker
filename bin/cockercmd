@@ -1,11 +1,11 @@
 #!/bin/bash
 
 #COCKER_HOME=/home/qxin6/cocker
-    
+
 CP1=$COCKER_HOME/java
 CP1=${CP1}:$COCKER_HOME/lib/ivy.jar
 CP1=${CP1}:$COCKER_HOME/lib/postgresql.jar
-CP1=${CP1}:$COCKER_HOME/lib/asm5.jar
+CP1=${CP1}:$COCKER_HOME/lib/asm6.jar
 
 for f in $COCKER_HOME/lib/*
 do

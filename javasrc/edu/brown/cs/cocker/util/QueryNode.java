@@ -4,37 +4,37 @@ import org.eclipse.jdt.core.dom.ASTNode;
 
 public class QueryNode
 {
-    ASTNode node;
-    int prop; //-1: no prop; 0: bug; 1: local context; 2: regional context; 3: global context
-    boolean nested; //Is this a query node nested in another query node?
+    ASTNode query_node;
+    int query_prop; //-1: no prop; 0: bug; 1: local context; 2: regional context; 3: global context
+    boolean query_nested; //Is this a query node nested in another query node?
 
     public QueryNode(ASTNode node, int prop, boolean nested) {
-	this.node = node;
-	this.prop = prop;
-	this.nested = nested;
+	this.query_node = node;
+	this.query_prop = prop;
+	this.query_nested = nested;
     }
     
     public QueryNode(ASTNode node, int prop) {
-	this.node = node;
-	this.prop = prop;
-	this.nested = false;
+	this.query_node = node;
+	this.query_prop = prop;
+	this.query_nested = false;
     }
 
     public QueryNode(ASTNode node) {
-	this.node = node;
-	this.prop = -1;
-	this.nested = false;
+	this.query_node = node;
+	this.query_prop = -1;
+	this.query_nested = false;
     }
 
-    public ASTNode getNode() { return node; }
+    public ASTNode getNode() { return query_node; }
 
-    public void setNode(ASTNode node) { this.node = node; }
+    public void setNode(ASTNode node) { this.query_node = node; }
     
-    public int getProp() { return prop; }
+    public int getProp() { return query_prop; }
 
-    public void setProp(int prop) { this.prop = prop; }
+    public void setProp(int prop) { this.query_prop = prop; }
 
-    public boolean isNested() { return nested; }
+    public boolean isNested() { return query_nested; }
 
-    public void setAsNestedOrNot(boolean nested) { this.nested = nested; }
+    public void setAsNestedOrNot(boolean nested) { this.query_nested = nested; }
 }

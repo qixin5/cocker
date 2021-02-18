@@ -139,7 +139,7 @@ public void reset() throws IOException
 /*										*/
 /********************************************************************************/
 
-@Override public boolean incrementToken() throws IOException
+@Override public final boolean incrementToken() throws IOException
 {
    if (token_list == null) return false;
    if (token_index >= token_list.size()) return false;

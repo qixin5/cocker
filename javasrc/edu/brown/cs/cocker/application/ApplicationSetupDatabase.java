@@ -47,8 +47,6 @@ import java.io.File;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.net.*;
-import java.nio.file.*;
 
 import edu.brown.cs.cocker.search.SearchProvider;
 import edu.brown.cs.cocker.server.ServerFileChangeBroadcaster;
@@ -99,10 +97,10 @@ private ApplicationSetupDatabase(String [] args)
    clean_database = false;
 
    cocker_home = System.getenv("COCKER_HOME");
-
-   //==========
-   System.err.println("Check cocker home: " + cocker_home);
-   //==========   
+   if (cocker_home == null) {
+      System.err.println("Must set COCKER_HOME first");
+      System.exit(1);
+    }
 
    scanArgs(args);
 
@@ -144,10 +142,16 @@ private void scanArgs(String [] args)
 	    String type = args[++i];
 	    AnalysisConstants.Factory.setAnalysisType(type);
 	  }
-	 else if (args[i].startsWith("-d")) {
-	    clean_database = true;
-	    drop_database = true;
-	  }
+         else if (args[i].startsWith("-dir") && i+1 < args.length) {      // -dir <directory>
+            File f1 = new File(args[++i]);
+            if (f1.mkdirs() || f1.exists()) {
+               AnalysisConstants.Factory.setIndexDirectory(f1);
+             }
+          }
+         else if (args[i].startsWith("-drop") || args[i].startsWith("-delete")) {
+            clean_database = true;
+            drop_database = true;
+          }
 	 else badArgs();
        }
       else if (args[i].equals("new")) {
@@ -155,6 +159,10 @@ private void scanArgs(String [] args)
        }
       else if (args[i].equals("clean")) {
 	 clean_database = true;
+       }
+      else if (args[i].equals("delete") || args[i].equals("drop")) {
+          clean_database = true;
+          drop_database = true;
        }
       else badArgs();
     }
@@ -180,7 +188,7 @@ private void execute()
 {
    if (drop_database) {
       cleanDatabase();
-      removeDatabase();
+      removeDatabase(true);
       return;
     }
 
@@ -208,11 +216,12 @@ private void cleanDatabase()
 {
    try {
       try {
-	 URI pathuri = null;
-	 String uriname = AnalysisConstants.Factory.getAnalysisType().getIndexPath();
-	 pathuri = new URI(uriname);
-	 Path path = Paths.get(pathuri);
-	 IvyFile.remove(path.toFile());
+	 File uriname = AnalysisConstants.Factory.getAnalysisType().getIndexPath();
+         IvyFile.remove(uriname);
+//       URI pathuri = null;
+//       pathuri = new URI(uriname.getPath());
+//       Path path = Paths.get(pathuri);
+//       IvyFile.remove(path.toFile());
        }
       catch (Exception e) {  }
 
@@ -228,7 +237,7 @@ private void cleanDatabase()
 
 private void createNewDatabase()
 {
-   removeDatabase();
+   removeDatabase(false);
 
    String dbname = AnalysisConstants.Factory.getAnalysisType().getDatabaseName();
 
@@ -256,18 +265,24 @@ private void createNewDatabase()
 }
 
 
-private void removeDatabase()
+private void removeDatabase(boolean report)
 {
    String dbname = AnalysisConstants.Factory.getAnalysisType().getDatabaseName();
    Connection connection = null;
+   String drop = "DROP DATABASE " + dbname;
    try {
       connection = IvyDatabase.openDefaultDatabase();
       Statement statement = connection.createStatement();
-      String drop = "DROP DATABASE " + dbname;
+      
       statement.executeUpdate(drop);
       connection.close();
     }
-   catch (SQLException e) { }
+   catch (SQLException e) { 
+      if (report) {
+         System.err.println("Problem dropping database: " + drop);
+         e.printStackTrace();
+       }
+    }
    finally {
       try {
 	 if (connection != null) connection.close();
@@ -275,6 +290,13 @@ private void removeDatabase()
       catch (SQLException e) { }
       connection = null;
     }
+   
+   try {
+      File uriname = AnalysisConstants.Factory.getAnalysisType().getIndexPath();
+      IvyFile.remove(uriname);
+    }
+   catch (Exception e) {  }
+   
 }
 
 

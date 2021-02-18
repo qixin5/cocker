@@ -5,11 +5,10 @@ import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.ASTVisitor;
 import java.util.List;
 import java.util.ArrayList;
-import java.util.Set;
-import java.util.HashSet;
 
 public class ASTNodeFinder
 {
+    @SuppressWarnings("unused")
     public static List<ASTNode> find(CompilationUnit cu, String loc) {
 	List<ASTNode> rslt_list = new ArrayList<ASTNode>();
 	if (cu == null) { return rslt_list; }
@@ -48,10 +47,10 @@ public class ASTNodeFinder
 
     private static class NodeFindVisitor extends ASTVisitor
     {
-	private int charseq;
+	private int char_seq;
 	private ASTNode found_node;
 
-	public NodeFindVisitor(int charseq) { this.charseq = charseq; }
+	public NodeFindVisitor(int charseq) { this.char_seq = charseq; }
 
 	public ASTNode getFoundNode() { return found_node; }
 
@@ -69,11 +68,11 @@ public class ASTNodeFinder
 	    System.err.println();
 	    */
 	    //========
-	    if (node_charseq == charseq) {
+	    if (node_charseq == char_seq) {
 		found_node = node;
 		return false;
 	    }
-	    else if (node_charseq > charseq) {
+	    else if (node_charseq > char_seq) {
 		return false; //unlikely to find the target
 	    }
 	    else {

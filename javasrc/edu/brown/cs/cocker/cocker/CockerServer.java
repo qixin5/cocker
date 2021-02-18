@@ -46,6 +46,7 @@ package edu.brown.cs.cocker.cocker;
 import java.io.IOException;
 import java.util.Date;
 import java.util.List;
+import java.util.Properties;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -68,9 +69,27 @@ import org.apache.lucene.search.Query;
 import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.BooleanClause;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.PrintStream;
 
 public class CockerServer extends Server implements CockerConstants, ServerConstants, AnalysisConstants {
+
+
+/********************************************************************************/
+/*										*/
+/*	Private Storage 							*/
+/*										*/
+/********************************************************************************/
+
+private CockerEngine the_engine;
+private long	update_interval;
+private Timer	server_timer;
+private Updater current_updater;
+private long    last_action;
+private long    idle_time;
+private IdleCheck idle_checker;
+
+
 
 
 /********************************************************************************/
@@ -83,7 +102,8 @@ public static void main(String[] args)
 {
    int port = 0;
    int tpsize = DEFAULT_THREAD_POOL_SIZE;
-   boolean local = false;
+   boolean log = true;
+   File datapath = null;
 
    for (int i = 0; i < args.length; ++i) {
       if (args[i].startsWith("-")) {
@@ -106,20 +126,44 @@ public static void main(String[] args)
 	 else if (args[i].startsWith("-a") && i+1 < args.length) {     // -analysis <type>
 	    AnalysisConstants.Factory.setAnalysisType(args[++i]);
 	  }
-	 else if (args[i].startsWith("-l")) {                           // -local
-	    local = true;
+	 else if (args[i].startsWith("-nol")) {                        // -nolog :: NO LOGGING
+	    log = false;
 	  }
+         else if (args[i].startsWith("-l")) {                          // -log :: LOGGING
+	    log = false;
+	  }
+         else if (args[i].startsWith("-dir") && i+1 < args.length) {   // -dir <data path>
+            datapath = new File(args[++i]);
+            datapath.mkdirs();
+            if (!datapath.exists()) {
+               badArgs();
+             }
+          }
 	 else badArgs();
        }
       else badArgs();
     }
+   
+   if (datapath != null) {
+      AnalysisConstants.Factory.setIndexDirectory(datapath);
+      if (port == 0) {
+         File props = new File(datapath,PROPERTY_FILE_NAME);
+         if (props.exists()) {
+            Properties p = new Properties();
+            try (FileInputStream fis = new FileInputStream(props)) {
+               p.load(fis);
+               port = Integer.parseInt(p.getProperty("port"));
+             }
+            catch (Exception e) { }
+          }
+       }
+    }
 
-   if (!local) {
+   if (log) {
       try {
-	 String idx = AnalysisConstants.Factory.getAnalysisType().getIndexPath();
-	 if (idx.startsWith("file:")) idx = idx.substring(5);
-	 File f = new File(idx + ".log");
-	 f.delete();
+	 File idx = AnalysisConstants.Factory.getAnalysisType().getIndexPath();
+	 File f = new File(idx.getPath() + ".log");
+	 // f.delete();
 	 PrintStream ps = new PrintStream(f);
 	 System.setErr(ps);
 	 System.setOut(ps);
@@ -131,8 +175,7 @@ public static void main(String[] args)
        }
     }
 
-   port = AnalysisConstants.Factory.getAnalysisType().getPortNumber();
-   CockerServer cs = new CockerServer(port,tpsize);
+   CockerServer cs = new CockerServer(datapath,port,tpsize);
 
    try {
       cs.start();
@@ -153,41 +196,38 @@ private static void badArgs()
 
 /********************************************************************************/
 /*										*/
-/*	Private Storage 							*/
-/*										*/
-/********************************************************************************/
-
-private CockerEngine the_engine;
-private long	update_interval;
-private Timer	server_timer;
-private Updater current_updater;
-
-
-
-
-/********************************************************************************/
-/*										*/
 /*	Constructors								*/
 /*										*/
 /********************************************************************************/
 
-private CockerServer(int port,int threadPoolSize)
+private CockerServer(File datapath,int port,int threadPoolSize)
 {
    super(port,threadPoolSize,null);
 
    try {
       the_engine = new CockerEngine();
-      setProperties(PROPERTY_FILE);
+      File root = datapath;
+      if (root == null) root = new File(System.getenv("COCKER_HOME"));
+      File pfile = new File(root,PROPERTY_FILE_NAME);
+      setProperties(pfile);
       update_interval = getLongProperty("UpdateInterval",DEFAULT_UPDATE_INTERVAL);
+      last_action = System.currentTimeMillis();
+      idle_time = 0;
+      idle_checker = null;
       server_timer = new Timer("CockerTimer");
       current_updater = null;
       setRequestCallback(new CockerHandleRequestCallback());
+      if (datapath != null) {
+         int wc = getIntProperty("WebClients",0);
+         setWebClients(wc);
+       }
     }
    catch (IOException e) {
       System.err.println("COCKER: Problem starting server: " + e);
       System.exit(1);
     }
 }
+
 
 
 /********************************************************************************/
@@ -200,6 +240,8 @@ CockerEngine getEngine()
 {
    return the_engine;
 }
+
+
 
 
 /********************************************************************************/
@@ -246,6 +288,71 @@ private void setUpdateTime(long interval,Date next)
 }
 
 
+
+/********************************************************************************/
+/*                                                                              */
+/*      Handle idle timeout                                                     */
+/*                                                                              */
+/********************************************************************************/
+
+private void setIdleTime(long interval)
+{
+   if (interval < 1000 && interval > 0) {
+      interval *= 1000;
+    }
+   
+   idle_time = interval;
+   noteAction();
+}
+
+
+
+private synchronized void noteAction()
+{
+   if (idle_checker != null) idle_checker.cancel();
+   idle_checker = null;
+   last_action = System.currentTimeMillis();
+   
+   if (idle_time != 0) {
+      idle_checker = new IdleCheck();
+      server_timer.schedule(idle_checker,idle_time);
+    }
+}
+
+
+private synchronized void checkIdle()
+{
+   if (idle_time == 0) return;
+   
+   long now = System.currentTimeMillis();
+   if (now - last_action < idle_time) return;
+   
+   IvyXmlWriter xw = new IvyXmlWriter();   
+   xw.begin("COMMAND");
+   xw.field("CMD","STOP");
+   xw.end("COMMAND");
+   Element cmd = IvyXml.convertStringToXml(xw.toString());
+   xw.close();
+   try {
+      getRequestCallback().handleMessage(cmd,null,this);
+    }
+   catch (MalformedMessageException e) {
+      System.err.println("COCKER: Bad exit message: " + e);
+    }
+}
+
+
+private class IdleCheck extends TimerTask {
+
+    IdleCheck() { }
+    
+    @Override public void run() {
+       checkIdle();
+     }
+    
+}       // end of inner class IdleCheck
+
+
 private void showSchedule(IvyXmlWriter xw)
 {
    xw.begin("SCHEDULE");
@@ -271,66 +378,70 @@ private class CockerHandleRequestCallback extends ServerRequestCallback {
 
    @Override public void handleMessage(Element xml,IvyXmlWriter xw,Server server)
    throws MalformedMessageException {
+      noteAction();
       if (IvyXml.isElement(xml,"COMMAND")) {
-	 String cmd = IvyXml.getAttrString(xml,"CMD");
-	 System.err.println("COCKER: Handle command: " + cmd);
-	 try {
-	    boolean done = true;
-	    boolean output = false;
-	    ServerOperation op = null;
-	    switch (cmd) {
-	       case "CODEQUERY" :
-		   codequery(IvyXml.getAttrInt(xml,"MAX"),
-			IvyXml.getTextElement(xml,"CODE"),
-			IvyXml.getAttrEnum(xml,"TYPE",ChunkType.STATEMENTS),
-			IvyXml.getTextElement(xml,"DATA"),
-			IvyXml.getTextElement(xml,"SEARCHSTRATEGY"),
-			server,xw);
-		  output = true;
-		  break;
-	       case "SYNCH" :
-		  op = new CockerOperation.Synchronize();
-		  break;
-	       case "OPTIMIZE" :
-		  op = new CockerOperation.Optimize();
-		  break;
-	       case "UPDATE" :
-		  op = new CockerOperation.Update();
-		  break;
-	       case "MONITOR" :
-		  op = new CockerOperation.Monitor(IvyXml.getTextElements(xml,"FILE"));
-		  break;
-	       case "UNMONITOR" :
-		  op = new CockerOperation.Unmonitor(IvyXml.getTextElements(xml,"FILE"));
-		  break;
-	       case "BLACKLIST" :
-		  op = new CockerOperation.Blacklist(IvyXml.getTextElements(xml,"FILE"));
-		  break;
-	       case "WHITELIST" :
-		  op = new CockerOperation.Whitelist(IvyXml.getTextElements(xml,"FILE"));
-		  break;
-	       case "UPDATETIME" :
-		  setUpdateTime(IvyXml.getAttrLong(xml,"INTERVAL"),IvyXml.getAttrDate(xml,"WHEN"));
-		  break;
-	       case "SCHEDULE" :
-		  showSchedule(xw);
-		  output = true;
-		  break;
-	       default :
-		  done = false;
-		  break;
-	     }
-	    if (op != null) {
-	       server.getOperationsManager().synchronousOperation(op);
-	     }
-	    if (done) {
-	       if (!output) xw.field("STATUS","OK");
-	       return;
-	     }
-	  }
-	 catch (Throwable e) {
-	    throw new MalformedMessageException("Scheduler problem: " + e,e);
-	  }
+         String cmd = IvyXml.getAttrString(xml,"CMD");
+         System.err.println("COCKER: Handle command: " + cmd);
+         try {
+            boolean done = true;
+            boolean output = false;
+            ServerOperation op = null;
+            switch (cmd) {
+               case "CODEQUERY" :
+                  codequery(IvyXml.getAttrInt(xml,"MAX"),
+                        IvyXml.getTextElement(xml,"CODE"),
+                        IvyXml.getAttrEnum(xml,"TYPE",ChunkType.STATEMENTS),
+                        IvyXml.getTextElement(xml,"DATA"),
+                        IvyXml.getTextElement(xml,"SEARCHSTRATEGY"),
+                        server,xw);
+                  output = true;
+                  break;
+               case "SYNCH" :
+                  op = new CockerOperation.Synchronize();
+                  break;
+               case "OPTIMIZE" :
+                  op = new CockerOperation.Optimize();
+                  break;
+               case "UPDATE" :
+                  op = new CockerOperation.Update();
+                  break;
+               case "MONITOR" :
+                  op = new CockerOperation.Monitor(IvyXml.getTextElements(xml,"FILE"));
+                  break;
+               case "UNMONITOR" :
+                  op = new CockerOperation.Unmonitor(IvyXml.getTextElements(xml,"FILE"));
+                  break;
+               case "BLACKLIST" :
+                  op = new CockerOperation.Blacklist(IvyXml.getTextElements(xml,"FILE"));
+                  break;
+               case "WHITELIST" :
+                  op = new CockerOperation.Whitelist(IvyXml.getTextElements(xml,"FILE"));
+                  break;
+               case "UPDATETIME" :
+                  setUpdateTime(IvyXml.getAttrLong(xml,"INTERVAL"),IvyXml.getAttrDate(xml,"WHEN"));
+                  break;
+               case "IDLETIME" :
+                  setIdleTime(IvyXml.getAttrLong(xml,"INTERVAL"));
+                  break;
+               case "SCHEDULE" :
+                  showSchedule(xw);
+                  output = true;
+                  break;
+               default :
+                  done = false;
+                  break;
+             }
+            if (op != null) {
+               server.getOperationsManager().synchronousOperation(op);
+             }
+            if (done) {
+               if (!output) xw.field("STATUS","OK");
+               return;
+             }
+          }
+         catch (Throwable e) {
+            throw new MalformedMessageException("Scheduler problem: " + e,e);
+          }
        }
       super.handleMessage(xml,xw,server);
    }
@@ -344,15 +455,17 @@ private class CockerHandleRequestCallback extends ServerRequestCallback {
 
    private void codequery(int max,String code,ChunkType type,String data,String search_strategy,Server s,IvyXmlWriter xw) throws IOException
    {
+      noteAction();
+      
       System.err.println("COCKER: QUERY " + search_strategy + " " + data + " " + type + " " + code);
       System.err.println("COCKER: --------------------------------");
-
+      
       CockerServer cs = (CockerServer) s;
       AnalysisType anal = AnalysisConstants.Factory.getAnalysisType();
       String anal_str = anal.toString(); //E.g., KGRAM5WORDMD
       PatternTokenizer tokenizer = anal.createTokenizer();
       if (data != null) type = ChunkType.FILE;
-
+      
       //"code" is supposed to be the content of a Java class,
       //"node_list" is thus a list of size 1 which contains only
       //the parsed CompilationUnit which corresponds to "code"
@@ -361,64 +474,64 @@ private class CockerHandleRequestCallback extends ServerRequestCallback {
       List<PatternToken> toks = tokenizer.getTokens(root,data);
       System.err.println("COCKER: QUERY TOKENS:");
       for (PatternToken tok : toks) {
-	  System.err.print(tok.getText());
-	  int tok_prop = tok.getProp();
-	  System.err.print("(p"+tok_prop+") ");
-	  
-	  //if (tok_prop == 0) { System.err.print("(b) "); }
-	  //else if (tok_prop == 1) { System.err.print("(lc) "); }
-	  //else if (tok_prop == 2) { System.err.print("(rc) "); }
-	  //else if (tok_prop == 3) { System.err.print("(gc) "); }
-	  //else { System.err.print(" "); }
-      }
+         System.err.print(tok.getText());
+         int tok_prop = tok.getProp();
+         System.err.print("(p"+tok_prop+") ");
+         
+         //if (tok_prop == 0) { System.err.print("(b) "); }
+         //else if (tok_prop == 1) { System.err.print("(lc) "); }
+         //else if (tok_prop == 2) { System.err.print("(rc) "); }
+         //else if (tok_prop == 3) { System.err.print("(gc) "); }
+         //else { System.err.print(" "); }
+       }
       System.err.println();
-
+      
       Query q = null;
       BooleanQuery.setMaxClauseCount(2048); //Query tokens CANNOT exceed this number
       BooleanQuery bq = new BooleanQuery();
       bq.setMinimumNumberShouldMatch(toks.size()/8); //A candidate code SHOULD AT LEAST match this number of tokens
-
+      
       boolean is_item0_onefield = (anal_str.startsWith("ITEM0") && anal_str.endsWith("ONEFIELD"));
       for (PatternToken pt : toks) {
-	  Term t = new Term(SEARCH_FIELD,pt.getText()); //Specified searching the "code" (SEARCH_FIELD) field
-	  TermQuery tq = new TermQuery(t);
-	  int pt_prop = pt.getProp();
-	  if (is_item0_onefield) {
-	      if (pt_prop == 0) { tq.setBoost(10); } //class name
-	      else if (pt_prop == 1) { tq.setBoost(10); } //method name
-	      else if (pt_prop == 2) { tq.setBoost(5); } //parameter type name
-	      else if (pt_prop == 3) { tq.setBoost(5); } //parameter name
-	      else if (pt_prop == 4) { tq.setBoost(2.5f); } //method call name
-	      else if (pt_prop == 5) { tq.setBoost(1.25f); } //type name
-	      else if (pt_prop == 6) { tq.setBoost(0.625f); } //var name
-	  }
-	  else {
-	      if ("bug_weighted".equals(search_strategy)) {
-		  if (pt_prop == 0) { tq.setBoost(2); }
-		  else if (pt_prop == 1) { tq.setBoost(1); }
-		  else if (pt_prop == 2) { tq.setBoost(0.5f); }
-		  else if (pt_prop == 3) { tq.setBoost(0.25f); }
-	      }
-	      else if ("ctxt_weighted".equals(search_strategy)) {
-		  if (pt_prop == 0) { tq.setBoost(0.5f); }
-		  else if (pt_prop == 1) { tq.setBoost(1); }
-		  else if (pt_prop == 2) { tq.setBoost(0.5f); }
-		  else if (pt_prop == 3) { tq.setBoost(0.25f); }
-	      }
-	  }
-	  bq.add(tq,BooleanClause.Occur.SHOULD); //May use *BooleanClause.Occur.MUST* for certain tokens (e.g., API calls)
-      }
-
+         Term t = new Term(SEARCH_FIELD,pt.getText()); //Specified searching the "code" (SEARCH_FIELD) field
+         TermQuery tq = new TermQuery(t);
+         int pt_prop = pt.getProp();
+         if (is_item0_onefield) {
+            if (pt_prop == 0) { tq.setBoost(10); } //class name
+            else if (pt_prop == 1) { tq.setBoost(10); } //method name
+            else if (pt_prop == 2) { tq.setBoost(5); } //parameter type name
+            else if (pt_prop == 3) { tq.setBoost(5); } //parameter name
+            else if (pt_prop == 4) { tq.setBoost(2.5f); } //method call name
+            else if (pt_prop == 5) { tq.setBoost(1.25f); } //type name
+            else if (pt_prop == 6) { tq.setBoost(0.625f); } //var name
+          }
+         else {
+            if ("bug_weighted".equals(search_strategy)) {
+               if (pt_prop == 0) { tq.setBoost(2); }
+               else if (pt_prop == 1) { tq.setBoost(1); }
+               else if (pt_prop == 2) { tq.setBoost(0.5f); }
+               else if (pt_prop == 3) { tq.setBoost(0.25f); }
+             }
+            else if ("ctxt_weighted".equals(search_strategy)) {
+               if (pt_prop == 0) { tq.setBoost(0.5f); }
+               else if (pt_prop == 1) { tq.setBoost(1); }
+               else if (pt_prop == 2) { tq.setBoost(0.5f); }
+               else if (pt_prop == 3) { tq.setBoost(0.25f); }
+             }
+          }
+         bq.add(tq,BooleanClause.Occur.SHOULD); //May use *BooleanClause.Occur.MUST* for certain tokens (e.g., API calls)
+       }
+      
       q = bq;
-
+      
       List<SearchResult> rslt = cs.getEngine().search(q,max);
       for (SearchResult r : rslt) {
-	 xw.begin("FILE");
-	 xw.field("SCORE",r.getScore());
-	 xw.field("MLOC",r.getFileLoc());
-	 xw.text(r.getFilePath());
-	 xw.end("FILE");
-	 //System.err.println("COCKER: --- RESULT: " + r.getFilePath() + " " + r.getFileLoc() + " " + r.getScore());
+         xw.begin("FILE");
+         xw.field("SCORE",r.getScore());
+         xw.field("MLOC",r.getFileLoc());
+         xw.text(r.getFilePath());
+         xw.end("FILE");
+         //System.err.println("COCKER: --- RESULT: " + r.getFilePath() + " " + r.getFileLoc() + " " + r.getScore());
        }
       System.err.println("COCKER: ---END----------------------------------");
    }
@@ -444,7 +557,8 @@ private class Updater extends TimerTask {
       ServerOperation op = new CockerOperation.Update();
       getOperationsManager().synchronousOperation(op);
     }
-}
+   
+}       // end of inner class Updater
 
 } // end of class CockerServer
 
