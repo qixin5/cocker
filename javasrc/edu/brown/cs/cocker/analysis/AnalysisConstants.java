@@ -54,6 +54,8 @@ import java.lang.reflect.Constructor;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.io.*;
+
+import edu.brown.cs.cocker.util.ResourceFinder;
 import edu.brown.cs.ivy.file.IvyFile;
 
 
@@ -277,14 +279,16 @@ class Factory {
    
    public static File getIndexDirectory() {
       if (index_directory == null) {
-         String home = System.getenv("COCKER_HOME");
-         File f1 = new File(home);
-         File f2 = new File(f1,"index");
-         try {
-            f2 = f2.getCanonicalFile();
+         String idxnm = System.getProperty("COCKER_INDEX");
+         if (idxnm != null) {
+            File f1 = new File(idxnm);
+            if (f1.exists() && f1.isDirectory()) 
+               index_directory = f1;
           }
-         catch (IOException e) { }
-         index_directory = f2;
+       }
+      if (index_directory == null) {
+         ResourceFinder rf = new ResourceFinder("COCKER_HOME");
+         index_directory = rf.getDirectory("index");
        }
       return index_directory;
     }

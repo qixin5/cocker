@@ -63,6 +63,7 @@ import edu.brown.cs.ivy.file.IvyDatabase;
 import java.sql.PreparedStatement;
 
 import edu.brown.cs.cocker.analysis.*;
+import edu.brown.cs.cocker.util.ResourceFinder;
 
 
 public class ServerFileChangeBroadcaster implements ServerConstants {
@@ -113,11 +114,9 @@ private ServerFileChangeBroadcaster()
    clear();
 
    String dbname = AnalysisConstants.Factory.getAnalysisType().getDatabaseName();
+   ResourceFinder rf = new ResourceFinder("COCKER_HOME");
+   rf.setDatabaseProps("Cocker");
    try {
-      String home = System.getenv("COCKER_HOME");
-      File p1 = new File(home);
-      File p2 = new File(p1,"Database.props");
-      IvyDatabase.setProperties(p2.getPath());
       db_connection = IvyDatabase.openDatabase(dbname);
     }
    catch (SQLException e) {

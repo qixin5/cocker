@@ -45,8 +45,6 @@
 
 package edu.brown.cs.cocker.cocker;
 
-import java.io.File;
-
 public interface CockerConstants
 {
 
@@ -61,24 +59,7 @@ long DEFAULT_UPDATE_INTERVAL = 1000L*60*60*24;
 long UPDATE_DELAY = 1000L*10;
 
 
-/********************************************************************************/
-/*                                                                              */
-/*      Property inforamtion                                                    */
-/*                                                                              */
-/********************************************************************************/
 
-class PropertyFileComputer {
-   
-   static final File PROP_FILE;
-  
-   static {
-      String home = System.getenv("COCKER_HOME");
-      if (home == null) home = ".";
-      File homefile = new File(home);
-      PROP_FILE = new File(homefile,".cocker");
-    }
-   
-}       // end of inner class PropertyFileComputer
 
 String PROPERTY_FILE_NAME = ".cocker"; 
 

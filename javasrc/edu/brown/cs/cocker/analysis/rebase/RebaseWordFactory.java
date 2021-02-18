@@ -10,6 +10,8 @@ package edu.brown.cs.cocker.analysis.rebase;
 import java.io.*;
 import java.util.*;
 
+import edu.brown.cs.cocker.util.ResourceFinder;
+
 
 public class RebaseWordFactory implements RebaseWordConstants
 {
@@ -191,33 +193,32 @@ private static void setupWordSets()
    short_words = new HashMap<String,String>();
    HashSet<String> fnd = new HashSet<String>();
 
-   String home = System.getenv("COCKER_HOME");
-   File f1 = new File(home);
-   File f2 = new File(f1,"lib");
-   File f = new File(f2,WORD_LIST_FILE);
-
-   try (BufferedReader br = new BufferedReader(new FileReader(f))) {
-      for ( ; ; ) {
-	 String wd = br.readLine();
-	 if (wd == null) break;
-	 if (wd.contains("'") || wd.contains("-")) continue;
-	 if (wd.length() < 3 || wd.length() > 24) continue;
-	 wd = wd.toLowerCase();
-	 dictionary_words.add(wd);
-	 String nwd = wd.replaceAll("[aeiou]","");
-	 if (!nwd.equals(wd) && nwd.length() >= 3) {
-	    if (fnd.contains(nwd)) {
-	       short_words.remove(nwd);
-	     }
-	    else {
-	       fnd.add(nwd);
-	       short_words.put(nwd,wd);
-	     }
-	  }
+   ResourceFinder rf = new ResourceFinder("COCKER_HOME");
+   InputStream ins = rf.getInputStream(WORD_LIST_FILE);
+   if (ins != null) {
+      try (BufferedReader br = new BufferedReader(new InputStreamReader(ins))) {
+         for ( ; ; ) {
+            String wd = br.readLine();
+            if (wd == null) break;
+            if (wd.contains("'") || wd.contains("-")) continue;
+            if (wd.length() < 3 || wd.length() > 24) continue;
+            wd = wd.toLowerCase();
+            dictionary_words.add(wd);
+            String nwd = wd.replaceAll("[aeiou]","");
+            if (!nwd.equals(wd) && nwd.length() >= 3) {
+               if (fnd.contains(nwd)) {
+                  short_words.remove(nwd);
+                }
+               else {
+                  fnd.add(nwd);
+                  short_words.put(nwd,wd);
+                }
+             }
+          }
        }
-    }
-   catch (IOException e) {
-      System.err.println("Problem reading word file: " + e);
+      catch (IOException e) {
+         System.err.println("Problem reading word file: " + e);
+       }
     }
 }
 

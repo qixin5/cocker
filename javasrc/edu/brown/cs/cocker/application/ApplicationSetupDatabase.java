@@ -50,6 +50,7 @@ import java.sql.Statement;
 
 import edu.brown.cs.cocker.search.SearchProvider;
 import edu.brown.cs.cocker.server.ServerFileChangeBroadcaster;
+import edu.brown.cs.cocker.util.ResourceFinder;
 import edu.brown.cs.cocker.analysis.AnalysisConstants;
 import edu.brown.cs.ivy.file.*;
 
@@ -81,7 +82,6 @@ public static void main(String [] args)
 private boolean 	new_database;
 private boolean 	clean_database;
 private boolean 	drop_database;
-private String		cocker_home;
 
 
 
@@ -96,25 +96,10 @@ private ApplicationSetupDatabase(String [] args)
    new_database = false;
    clean_database = false;
 
-   cocker_home = System.getenv("COCKER_HOME");
-   if (cocker_home == null) {
-      System.err.println("Must set COCKER_HOME first");
-      System.exit(1);
-    }
-
    scanArgs(args);
-
-   if (cocker_home != null) {
-      File p1 = new File(cocker_home);
-      File p2 = new File(p1,"Database.props");
-      try {
-	 IvyDatabase.setProperties(p2.getPath());
-       }
-      catch (SQLException e) {
-	 System.err.println("Problem setting up database access: " + e);
-	 System.exit(1);
-       }
-    }
+   
+   ResourceFinder rf = new ResourceFinder("COCKER_HOME");
+   rf.setDatabaseProps("Cocker");
 }
 
 
@@ -134,9 +119,6 @@ private void scanArgs(String [] args)
 	  }
 	 else if (args[i].startsWith("-c")) {                           // -clean
 	    clean_database = true;
-	  }
-	 else if (args[i].startsWith("-h") && i+1 < args.length) {      // -H <Home>
-	    cocker_home = args[++i];
 	  }
 	 else if (args[i].startsWith("-a") && i+1 < args.length) {      // -analysis <type>
 	    String type = args[++i];

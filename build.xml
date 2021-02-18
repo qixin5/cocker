@@ -3,21 +3,21 @@
    <property file='build.properties' />
    <property name='PRO' value='/pro' />
    <property name='IVYBIN' value='${PRO}/ivy/java' />
-   <property name='ROSE' value='${PRO}/rose' />
+   <property name='COCKER' value='${PRO}/cocker' />
 
    <available file="./build.properties" type='file' property='setup.done' />
    <path id='setuppath'>
       <pathelement location='..' />
    </path>
-   <path id='rosepath'>
+   <path id='cockerpath'>
       <pathelement location='.' />
    </path>
    <property name='setupfile' refid='setuppath' />
-   <property name='cockerfile' refid='rosepath' />
+   <property name='cockerfile' refid='cockerpath' />
    <target name='setup' unless='setup.done'>
       <echo file='./build.properties' message="PRO=${setupfile}${line.separator}" />
       <echo file='./build.properties' message='COCKER=${cockerfile}${line.separator}' append='true' />
-      <mkdir dir='./java/edu/brown/cs/rose' />
+      <mkdir dir='./java/edu/brown/cs/cocker' />
       <property name='PRO' value='{setupfile}' />
       <property name='COCKER' value='{cockerfile}' />
    </target>
@@ -28,7 +28,7 @@
    <path id='cocker.classpath'>
       <pathelement location='java' />
       <pathelement location='lib/ivy.jar' />
-      <pathelement location='lib/asm5.jar'/>
+      <pathelement location='lib/asm6.jar'/>
       <pathelement location='lib/postgresql.jar' />
       <pathelement location='lib/commons-io-2.4.jar'/>
       <fileset dir='lib/eclipsejar' includes='*.jar' />
@@ -117,4 +117,22 @@
 	  <arg value='-new' />
       </java>
    </target>
+
+   <target name='bubbles' depends='all'>
+      <jar destfile='cocker.jar'>
+	 <manifest>
+	    <attribute name='Main-Class' value='edu.brown.cs.cocker.cocker.CockerServer' />
+	 </manifest>
+	 <fileset dir='./java' includes='**/*.class' />
+	 <zipfileset src='${COCKER}/lib/commons-logging-1.1.1.jar' excludes='META-INF/*' />
+	 <zipfileset src='${COCKER}/lib/commons-el.jar' excludes='META-INF/*' />
+	 <zipfileset src='${COCKER}/lib/commons-io-2.4.jar' excludes='META-INF/*' />
+	 <zipfileset src='${COCKER}/lib/velocity-1.4.jar' excludes='META-INF/*' />
+	 <zipfileset src='${COCKER}/lib/lucene-analyzers-common-5.0.0.jar' excludes='META-INF/*' />
+	 <zipfileset src='${COCKER}/lib/lucene-core-5.0.0.jar' excludes='META-INF/*' />
+	 <zipfileset src='${COCKER}/lib/lucene-queries-5.0.0.jar' excludes='META-INF/*' />
+	 <zipfileset src='${COCKER}/lib/lucene-queryparser-5.0.0.jar' excludes='META-INF/*' />
+      </jar>
+   </target>
+
 </project>

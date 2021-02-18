@@ -44,6 +44,7 @@
 package edu.brown.cs.cocker.cocker;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Date;
 import java.util.List;
 import java.util.Properties;
@@ -54,6 +55,7 @@ import org.w3c.dom.Element;
 
 import edu.brown.cs.cocker.search.SearchResult;
 import edu.brown.cs.cocker.server.ServerRequestCallback;
+import edu.brown.cs.cocker.util.ResourceFinder;
 import edu.brown.cs.cocker.server.ServerConstants;
 import edu.brown.cs.cocker.server.ServerOperation;
 import edu.brown.cs.cocker.server.Server;
@@ -206,10 +208,18 @@ private CockerServer(File datapath,int port,int threadPoolSize)
 
    try {
       the_engine = new CockerEngine();
-      File root = datapath;
-      if (root == null) root = new File(System.getenv("COCKER_HOME"));
-      File pfile = new File(root,PROPERTY_FILE_NAME);
-      setProperties(pfile);
+      
+      ResourceFinder rf;
+      if (datapath != null) {
+         File pfile = new File(datapath,PROPERTY_FILE_NAME);
+         setProperties(pfile);
+       }
+      else {
+         rf = new ResourceFinder("COCKER_HOME");
+         InputStream ins = rf.getInputStream(PROPERTY_FILE_NAME);
+         setProperties(ins);
+       }
+      
       update_interval = getLongProperty("UpdateInterval",DEFAULT_UPDATE_INTERVAL);
       last_action = System.currentTimeMillis();
       idle_time = 0;

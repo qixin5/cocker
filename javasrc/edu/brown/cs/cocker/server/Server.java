@@ -47,6 +47,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.net.ServerSocket;
@@ -247,6 +248,19 @@ protected void setProperties(File propertiesfile)
       FileInputStream fis = new FileInputStream(property_file);
       server_properties.load(fis);
       fis.close();
+    }
+   catch (IOException e) { }
+}
+
+
+protected void setProperties(InputStream ins)
+{
+   server_properties = new Properties();
+   if (ins == null) return;
+   
+   try {
+      server_properties.load(ins);
+      ins.close();
     }
    catch (IOException e) { }
 }
