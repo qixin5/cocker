@@ -32,10 +32,8 @@
       <pathelement location='lib/postgresql.jar' />
       <pathelement location='lib/commons-io-2.4.jar'/>
       <fileset dir='lib/eclipsejar' includes='*.jar' />
-      <fileset dir='lib' includes='velocity*.jar' />
       <fileset dir='lib' includes='commons-logging*.jar' />
       <fileset dir='lib' includes='commons-el*jar' />
-      <fileset dir='lib' includes='jsp-api*.jar' />
       <fileset dir='lib' includes='jtar*.jar' />
       <fileset dir='lib' includes='lucene*.jar' />
    </path>
@@ -127,7 +125,6 @@
 	 <zipfileset src='${COCKER}/lib/commons-logging-1.1.1.jar' excludes='META-INF/*' />
 	 <zipfileset src='${COCKER}/lib/commons-el.jar' excludes='META-INF/*' />
 	 <zipfileset src='${COCKER}/lib/commons-io-2.4.jar' excludes='META-INF/*' />
-	 <zipfileset src='${COCKER}/lib/velocity-1.4.jar' excludes='META-INF/*' />
 	 <zipfileset src='${COCKER}/lib/lucene-analyzers-common-5.0.0.jar' excludes='META-INF/*' />
 	 <zipfileset src='${COCKER}/lib/lucene-core-5.0.0.jar' excludes='META-INF/*' />
 	 <zipfileset src='${COCKER}/lib/lucene-queries-5.0.0.jar' excludes='META-INF/*' />

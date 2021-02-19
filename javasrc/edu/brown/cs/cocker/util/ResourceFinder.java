@@ -87,6 +87,9 @@ public InputStream getInputStream(String name)
 {
    InputStream ins = getStreamForDirectory(base_directory,name);
    if (ins != null) return ins;
+   File f1 = new File(base_directory,"resources");
+   ins = getStreamForDirectory(f1,name);
+   if (ins != null) return ins;
    
    ClassLoader cl = ResourceFinder.class.getClassLoader();
    ins = cl.getResourceAsStream(name);
@@ -153,7 +156,7 @@ public File getDirectory(String name)
    File home = new File(System.getProperty("user.home"));
    File f4 = getActualFile(home,name);
    if (f4 != null) return f4;
-   File f5 = new File(root,name);
+   File f5 = getActualFile(root,name);
    f5.mkdir();
    if (f5.exists() && f5.isDirectory()) return f5;
    

@@ -11,7 +11,7 @@ public interface RebaseWordConstants {
 /*										*/
 /********************************************************************************/
 
-String WORD_LIST_FILE = "words";
+String WORD_LIST_FILE = "resources/words";
 
 
 

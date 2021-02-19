@@ -16,7 +16,7 @@ If you use Cocker, please cite our paper:
 
 ## Installation and usage
 
-0. Prerequisite: Linux. JDK 1.8. Ant. PostgreSQL.
+0. Prerequisite: Linux. JDK 10. Ant. PostgreSQL.
 
 If you haven't installed PostgreSQL, refer to https://www.postgresql.org/download.
 
@@ -30,19 +30,7 @@ sudo -u postgres psql postgres
 Control+D
 ```
 
-
-2. Update PostgreSQL's property file.
-
-Copy Database.props.template to Database.props.
-In Database.props (in cocker), replace dbmspassword with your own password.
-
-
-3. Set COCKER_HOME.
-
-Add `export COCKER_HOME=XXX/cocker` (XXX is the parent directory of cocker) in the end of ~/.profile. Then run `source ~/.profile`.
-
-
-4. Set up Ivy.
+2. Set up Ivy.
 
 ```
 cd lib
@@ -65,15 +53,29 @@ After this, you should have access to a file named ~/.ivy/Props. The content of 
 NOTE: You may see error message including " java.net.UnknownHostException: valerie". This is fine.
 
 
+3. Update PostgreSQL's property file.
+
+Copy Database.props.template to ~/.ivy/Cocker.Database.props.
+In Cocker.Database.props replace dbmspassword with your own password.
+
+
+4. Set COCKER_HOME.
+
+Add `export COCKER_HOME=XXX/cocker` (XXX is the parent directory of cocker) in the end of ~/.profile. Then run `source ~/.profile`.
+This should no longer be necessary, but can help.
+
+
+
 5. Use your own index path.
 
 ```
-1. Make sure you have an empty directory named XXX to save index files.
-2. Create a link in COCKER_HOME to this directory called index (ln -s XXX index)
+Make sure you have an empty directory named XXX to save index files.
+Add 'export COCKER_INDEX=XXX' in .profile and source it. (or do equivalent for other shells).
+Alternatively, create a link 'index' in either COCKER_HOME or your home directory to the index directory.
+Alternatively, create a properies file ~/.cockerrc with key index and value XXX
+All these should use absolute paths.
+
 ```
-
-Note: Use ABSOLUTE path.
-
 
 6. Build cocker.
 
@@ -98,17 +100,6 @@ cd bin
 * NOTE: Replace <CODE_DIR_PATH> with ABSOLUTE path to the directory holding code files (e.g., Merobase) to be indexed.
 * NOTE: Make sure you use a large memory (e.g., 16G as above).
 * NOTE: Depending on how many files you want to index, this may take a while. After indexing, you should see index files in XXX/vol/cocker/cocker-index-ssfix
-
-
-9. Stop and restart server before code search.
-
-```
-1. cd bin
-2. ./cockercmd -a SSFIX -stop
-3. Wait for a few seconds (e.g., 15s)
-4. ./cockercmd -a SSFIX -start -M 16000
-5. Wait for a few seconds (e.g., 15s) before you do any code search
-```
 
 
 10. Code search.
@@ -152,15 +143,18 @@ When you want to index new files in directory XXX, do the following.
 
 ```
 1. cd bin
-2. ./cockerq -a SSFIX -m XXX -M 16000 (suppose the server is running, otherwise add " -start" in the end)
-3. ./cockercmd -a SSFIX -stop
-4. Wait for a few seconds (e.g., 15s)
-6. ./cockercmd -a SSFIX -start -M 16000
+2. ./cockerq -a SSFIX -m XXX (suppose the server is running, otherwise add " -start" in the end)
+
+
+To stop the server (other than killing it which might corrupt the index):
+
+1. ./cockercmd -a SSFIX -stop
+2. Wait for a few seconds (e.g., 15s)
+
+
+To restart the server
+
+1. ./cockercmd -a SSFIX -start -M 16000
 ```
-
-
-### Final notes
-
-Before you do code search, make sure you've started the server.
 
 

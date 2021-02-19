@@ -1,20 +1,26 @@
 #!/bin/bash
 
-#COCKER_HOME=/home/qxin6/cocker
+
+# source cockerenv
+if [[ X$COCKER_HOME == X ]]
+then
+   x0=`which $0`
+   x1=$(dirname $x0)
+   if [[ ${x1} == "." ]]
+   then
+      x1=`pwd -P`
+   fi
+   x2=$(dirname $x1)
+
+   COCKER_HOME=$x2
+#  export COCKER_HOME
+fi
 
 CP1=$COCKER_HOME/java
 CP1=${CP1}:$COCKER_HOME/lib/ivy.jar
 CP1=${CP1}:$COCKER_HOME/lib/postgresql.jar
 CP1=${CP1}:$COCKER_HOME/lib/asm6.jar
 
-for f in $COCKER_HOME/lib/*
-do
-    fname=$(basename $f)
-    if [[ ${fname} == velocity*.jar ]]
-    then
-	CP1=${CP1}:$f
-    fi
-done
 
 for f in $COCKER_HOME/lib/*
 do
@@ -29,15 +35,6 @@ for f in $COCKER_HOME/lib/*
 do
     fname=$(basename $f)
     if [[ ${fname} == commons-el*.jar ]]
-    then
-	CP1=${CP1}:$f
-    fi
-done
-
-for f in $COCKER_HOME/lib/*
-do
-    fname=$(basename $f)
-    if [[ ${fname} == jsp-api*.jar ]]
     then
 	CP1=${CP1}:$f
     fi
@@ -71,6 +68,8 @@ do
 	CP1=${CP1}:$f
     fi
 done
+
+CP1=${CP1}:$COCKER_HOME/resources
 
 #echo ${CP1}
 

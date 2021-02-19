@@ -47,6 +47,7 @@ package edu.brown.cs.cocker.analysis;
 
 
 import java.util.List;
+import java.util.Properties;
 import java.util.ArrayList;
 import org.eclipse.jdt.core.dom.*;
 
@@ -286,6 +287,24 @@ class Factory {
                index_directory = f1;
           }
        }
+      
+      File home = new File(System.getProperty("user.home"));
+      File fprop = new File(home,".cockerrc");
+      if (fprop.exists() && fprop.canRead()) {
+         Properties p = new Properties();
+         try (Reader ir = new FileReader(fprop)) {
+            p.load(ir);
+          }
+         catch (IOException e) { }
+         String dir = p.getProperty("index");
+         if (dir != null) {
+            File f = new File(dir);
+            if (f.exists() && f.isDirectory()) {
+               index_directory = f;
+             }
+          }
+       }
+      
       if (index_directory == null) {
          ResourceFinder rf = new ResourceFinder("COCKER_HOME");
          index_directory = rf.getDirectory("index");
