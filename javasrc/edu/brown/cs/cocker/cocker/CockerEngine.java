@@ -50,7 +50,7 @@ import java.util.List;
 import edu.brown.cs.cocker.search.SearchProvider;
 import edu.brown.cs.cocker.search.SearchResult;
 import edu.brown.cs.cocker.server.ServerFileChangeBroadcaster;
-
+import edu.brown.cs.ivy.xml.IvyXmlWriter;
 
 import org.apache.lucene.search.Query;
 /**
@@ -179,6 +179,14 @@ List<SearchResult> search(Query query,int max) throws IOException
    return getSearchProvider().search(query,max);
 }
    
+
+
+void showFiles(IvyXmlWriter xw) throws IOException
+{
+   ShowFilesCallback fcb = new ShowFilesCallback(xw);
+   executeOperationInSession(fcb);
+}
+
 
 
 
@@ -349,6 +357,21 @@ private class UnmonitorFileCallback extends BasicFileOperationCallback {
 
 }	// end of inner class UnmonitorFileCallback
 
+
+
+private class ShowFilesCallback implements EngineOperationCallback {
+
+   private IvyXmlWriter xml_writer; 
+   
+   ShowFilesCallback(IvyXmlWriter xw) {
+      xml_writer = xw;
+    }
+   
+   @Override public void executeInSession(CockerSession session) throws IOException {
+      session.showFiles(xml_writer);
+    }
+   
+}       // end of inner class ShowFilesCallback
 
 }	// end of class Engine
 

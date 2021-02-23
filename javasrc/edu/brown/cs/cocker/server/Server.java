@@ -63,6 +63,8 @@ import java.util.Iterator;
 
 import org.w3c.dom.Element;
 
+import edu.brown.cs.cocker.analysis.AnalysisConstants;
+import edu.brown.cs.ivy.exec.IvyExecQuery;
 import edu.brown.cs.ivy.xml.IvyXml;
 import edu.brown.cs.ivy.xml.IvyXmlReader;
 import edu.brown.cs.ivy.xml.IvyXmlWriter;
@@ -243,7 +245,8 @@ protected void setWebClients(int ct)
 protected void setProperties(File propertiesfile)
 {
    property_file = propertiesfile;
-   server_properties = new Properties();
+   // server_properties = new Properties();
+   // allow over writing properties from multiple sources
    try {
       FileInputStream fis = new FileInputStream(property_file);
       server_properties.load(fis);
@@ -341,6 +344,7 @@ public void start() throws IOException
    if (host_port == 0) {
       host_port = server_socket.getLocalPort();
       setProperty("port",host_port);
+      setProperty("host",IvyExecQuery.getHostName());
     }
     
    setIsRunning(true);
@@ -385,9 +389,9 @@ private class RequestHandler extends Thread implements ServerConstants {
       client_socket = clientsocket;
       session_open = false;
       try {
-	 client_socket.setSoTimeout(60000);
-	 xml_reader = new IvyXmlReader(client_socket.getInputStream());
-	 output_writer = new OutputStreamWriter(client_socket.getOutputStream());
+         client_socket.setSoTimeout(60000);
+         xml_reader = new IvyXmlReader(client_socket.getInputStream());
+         output_writer = new OutputStreamWriter(client_socket.getOutputStream());
        }
       catch (IOException e) { }
     }
@@ -411,47 +415,56 @@ private class RequestHandler extends Thread implements ServerConstants {
    public void run() {
       // TODO what happens if the client times out?
       session_open = true;
-
+   
       // keep reading messages while the session is open
       while (session_open) {
-	 Element request = null;
-	 IvyXmlWriter xw = new IvyXmlWriter();
-	 try {
-	    for ( ; ; ) {
-	       request = getRequest(); // try to read
-	       if (request == null || !IvyXml.isElement(request,"PING")) break;
-	       writeResponse("<PONG/>\n");
-	       System.err.println("COCKER: Handled PING");
-	     }
-	  }
-	 catch (IOException ioe) {
-	    System.err.println("COCKER: I/O error on request: " + ioe);
-	    break;
-	  }
-	 if (request == null) break;
-
-	 try {
-	    xw.begin("RESULT");
-	    request_callback.handleMessage(request,xw,Server.this);
-	    xw.end("RESULT");
-	  }
-	 catch (Throwable t) {
-	    t.printStackTrace();
-	    xw = new IvyXmlWriter();
-	    xw.begin("ERROR");
-	    xw.textElement("FAULT",t.toString());
-	    xw.end("ERROR");
-	  }
-
-	 try {
-	    writeResponse(xw.toString());
-	  }
-	 catch (IOException ioe) {
-	    break;
-	  }
-	 shutdown();
+         Element request = null;
+         try {
+            for ( ; ; ) {
+               request = getRequest(); // try to read
+               if (request == null || !IvyXml.isElement(request,"PING")) break;
+               try (IvyXmlWriter xw = new IvyXmlWriter()) {
+                  xw.begin("PONG");
+                  xw.field("TYPE",AnalysisConstants.Factory.getAnalysisType());
+                  xw.field("DIR",AnalysisConstants.Factory.getIndexDirectory());
+                  xw.field("HOST",IvyExecQuery.getHostName());
+                  xw.field("PORT",host_port);
+                  xw.field("DB",AnalysisConstants.Factory.getAnalysisType().getDatabaseName());
+                  xw.end("PONG");
+                  writeResponse(xw.toString());
+                }
+               System.err.println("COCKER: Handled PING");
+             }
+          }
+         catch (IOException ioe) {
+            System.err.println("COCKER: I/O error on request: " + ioe);
+            break;
+          }
+         if (request == null) break;
+         
+         IvyXmlWriter xw = new IvyXmlWriter();
+         try {
+            xw.begin("RESULT");
+            request_callback.handleMessage(request,xw,Server.this);
+            xw.end("RESULT");
+          }
+         catch (Throwable t) {
+            t.printStackTrace();
+            xw = new IvyXmlWriter();
+            xw.begin("ERROR");
+            xw.textElement("FAULT",t.toString());
+            xw.end("ERROR");
+          }
+   
+         try {
+            writeResponse(xw.toString());
+          }
+         catch (IOException ioe) {
+            break;
+          }
+         shutdown();
        }
-
+   
       // no more session so quit
       shutdown();
     }

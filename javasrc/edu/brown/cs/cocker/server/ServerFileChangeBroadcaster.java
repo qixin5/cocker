@@ -58,7 +58,7 @@ import java.util.Set;
 import javax.swing.event.EventListenerList;
 
 import edu.brown.cs.ivy.file.IvyDatabase;
-
+import edu.brown.cs.ivy.xml.IvyXmlWriter;
 
 import java.sql.PreparedStatement;
 
@@ -284,13 +284,31 @@ public void untrackFile(File file)
    for (Iterator<ServerFileImpl> iter = top_level_files.iterator(); iter.hasNext();) {
       ServerFileImpl trackedfile = iter.next();
       trackedfile.accept(untracker);
-      if (trackedfile.equals(file)) {
+      if (trackedfile.getFile().equals(file)) {
 	 update("WhiteList",false,file);
 	 iter.remove();
        }
     }
 
 }
+
+
+public void showFiles(IvyXmlWriter xw)
+{
+   xw.begin("FILEDATA");
+   for (ServerFileImpl sfi : top_level_files) {
+      xw.begin("INCLUDE");
+      xw.field("NAME",sfi.getPath());
+      xw.end("INCLUDE");
+    }
+   for (File f1 : black_list) {
+      xw.begin("EXCLUDE");
+      xw.field("NAME",f1.getPath());
+      xw.end("EXCLUDE");
+    }
+   xw.end("FILEDATA");
+}
+
 
 
 

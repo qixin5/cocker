@@ -149,7 +149,8 @@ public static void main(String[] args)
    if (datapath != null) {
       AnalysisConstants.Factory.setIndexDirectory(datapath);
       if (port == 0) {
-         File props = new File(datapath,PROPERTY_FILE_NAME);
+         String tnm = AnalysisConstants.Factory.getAnalysisType().toString().toLowerCase();
+         File props = new File(datapath,PROPERTY_FILE_NAME + "." + tnm);
          if (props.exists()) {
             Properties p = new Properties();
             try (FileInputStream fis = new FileInputStream(props)) {
@@ -213,6 +214,9 @@ private CockerServer(File datapath,int port,int threadPoolSize)
       if (datapath != null) {
          File pfile = new File(datapath,PROPERTY_FILE_NAME);
          setProperties(pfile);
+         String tnm = AnalysisConstants.Factory.getAnalysisType().toString().toLowerCase();
+         File pfile1 = new File(datapath,PROPERTY_FILE_NAME + "." + tnm);
+         setProperties(pfile1);
        }
       else {
          rf = new ResourceFinder("COCKER_HOME");
@@ -307,10 +311,6 @@ private void setUpdateTime(long interval,Date next)
 
 private void setIdleTime(long interval)
 {
-   if (interval < 1000 && interval > 0) {
-      interval *= 1000;
-    }
-   
    idle_time = interval;
    noteAction();
 }
@@ -378,6 +378,9 @@ private void showSchedule(IvyXmlWriter xw)
 
 
 
+
+
+
 /********************************************************************************/
 /*										*/
 /*	Request handlers							*/
@@ -437,6 +440,19 @@ private class CockerHandleRequestCallback extends ServerRequestCallback {
                   showSchedule(xw);
                   output = true;
                   break;
+               case "FILES" :
+                  getEngine().showFiles(xw);
+                  output = true;
+                  break;
+               case "GETFILE" :
+                  File f = new File(IvyXml.getAttrString(xml,"FILE"));
+                  try {
+                     String cnts = IvyFile.loadFile(f);
+                     xw.bytesElement("CONTENTS",cnts.getBytes());
+                   }
+                  catch (IOException e) { }
+                  output = true;
+                  break;
                default :
                   done = false;
                   break;
@@ -463,11 +479,11 @@ private class CockerHandleRequestCallback extends ServerRequestCallback {
 
 
 
-   private void codequery(int max,String code,ChunkType type,String data,String search_strategy,Server s,IvyXmlWriter xw) throws IOException
+   private void codequery(int max,String code,ChunkType type,String data,String searchstrategy,Server s,IvyXmlWriter xw) throws IOException
    {
       noteAction();
       
-      System.err.println("COCKER: QUERY " + search_strategy + " " + data + " " + type + " " + code);
+      System.err.println("COCKER: QUERY " + searchstrategy + " " + data + " " + type + " " + code);
       System.err.println("COCKER: --------------------------------");
       
       CockerServer cs = (CockerServer) s;
@@ -516,13 +532,13 @@ private class CockerHandleRequestCallback extends ServerRequestCallback {
             else if (pt_prop == 6) { tq.setBoost(0.625f); } //var name
           }
          else {
-            if ("bug_weighted".equals(search_strategy)) {
+            if ("bug_weighted".equals(searchstrategy)) {
                if (pt_prop == 0) { tq.setBoost(2); }
                else if (pt_prop == 1) { tq.setBoost(1); }
                else if (pt_prop == 2) { tq.setBoost(0.5f); }
                else if (pt_prop == 3) { tq.setBoost(0.25f); }
              }
-            else if ("ctxt_weighted".equals(search_strategy)) {
+            else if ("ctxt_weighted".equals(searchstrategy)) {
                if (pt_prop == 0) { tq.setBoost(0.5f); }
                else if (pt_prop == 1) { tq.setBoost(1); }
                else if (pt_prop == 2) { tq.setBoost(0.5f); }

@@ -82,8 +82,8 @@ public static class Synchronize extends CockerOperation {
 
    @Override public void evaluate(Server s) {
       try {
-	 CockerServer cs = (CockerServer) s;
-	 cs.getEngine().synchronizeIndex();
+         CockerServer cs = (CockerServer) s;
+         cs.getEngine().synchronizeIndex();
        }
       catch (Exception e) { }
     }
@@ -220,12 +220,12 @@ public static class Blacklist extends CockerOperation {
 
    @Override public void evaluate(Server s) {
       try {
-	 CockerServer cs = (CockerServer) s;
-	 if (file_names != null) {
-	    for (String file : file_names) {
-	       cs.getEngine().blacklistFile(new File(file));
-	     }
-	  }
+         CockerServer cs = (CockerServer) s;
+         if (file_names != null) {
+            for (String file : file_names) {
+               cs.getEngine().blacklistFile(new File(file));
+             }
+          }
        }
       catch (Exception e) { }
     }
@@ -263,6 +263,8 @@ public static class Whitelist extends CockerOperation {
     }
 
 }	// end of inner class Whitelist
+
+
 
 
 

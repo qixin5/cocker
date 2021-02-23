@@ -50,6 +50,7 @@ import edu.brown.cs.cocker.search.SearchContext;
 import edu.brown.cs.cocker.search.SearchProvider;
 import edu.brown.cs.cocker.server.ServerConstants;
 import edu.brown.cs.cocker.server.ServerFileChangeBroadcaster;
+import edu.brown.cs.ivy.xml.IvyXmlWriter;
 
 class CockerSession implements ServerConstants {
 
@@ -237,6 +238,21 @@ void unmonitorFile(File file) throws IOException
    fscb_broadcaster.untrackFile(file);
 }
 
+
+void showFiles(IvyXmlWriter xw) throws IOException
+{
+   validateSession();
+   fscb_broadcaster.showFiles(xw);
+}
+
+
+
+/********************************************************************************/
+/*                                                                              */
+/*      Helper methods                                                          */
+/*                                                                              */
+/********************************************************************************/
+
 private void updateFileInIndex(ServerFile file)
 {
    try {
@@ -245,10 +261,13 @@ private void updateFileInIndex(ServerFile file)
    catch (IOException ioe) { }
 }
 
+
 private void validateSession() throws IOException
 {
    if (!is_open) throw new IOException("Session is closed.");
 }
+
+
 
 private class MonitoredFileChangedListener implements FileChangeListener {
 

@@ -297,7 +297,6 @@ protected void printResults(List<SearchResult> results)
 }
 
 protected String getResultString(List<SearchResult> results) {
-
     Collections.sort(results);
 
     StringBuilder sb = new StringBuilder();
