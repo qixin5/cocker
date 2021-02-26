@@ -48,6 +48,8 @@ import java.util.*;
 import java.util.zip.*;
 import org.xeustechnologies.jtar.*;
 
+import edu.brown.cs.ivy.file.IvyLog;
+
 
 
 abstract public class ServerFileImpl implements ServerConstants, ServerConstants.ServerFile {
@@ -386,7 +388,7 @@ static class TrackedTarFile extends Container {
           }
        }
       catch (Exception e) {
-         System.err.println("COCKER: Problem with tar file " + getFile());
+         IvyLog.logE("SERVER","Problem with tar file " + getFile());
        }
       finally {
          try {
@@ -396,7 +398,7 @@ static class TrackedTarFile extends Container {
        }
       return rslt;
     }
-
+   
 }	// end of inner class TrackedTarFile
 
 
@@ -472,12 +474,12 @@ static class TrackedZipFile extends Container {
                 }
              }
             catch (Exception e) { 
-               // System.err.println("COCKER: Problem with zip file entry " + getFile());       
+               // IvyLog.logD("SERVER","Problem with zip file entry " + getFile());       
              }
           }
        }
       catch (Exception e) { 
-         System.err.println("COCKER: Problem with zip file " + getFile());
+         IvyLog.logE("SERVER","Problem with zip file " + getFile(),e);
        }
       finally {
          try {
@@ -515,7 +517,6 @@ static class TrackedZipEntry extends ServerFileImpl {
 
    @Override public boolean isFile()			{ return true; }
 
-   @SuppressWarnings("resource")
    @Override public Reader getReader() throws IOException {
       ZipFile zf = new ZipFile(getFile());
       ZipEntry ent = zf.getEntry(zip_entry.getName());

@@ -50,6 +50,7 @@ import edu.brown.cs.cocker.search.SearchContext;
 import edu.brown.cs.cocker.search.SearchProvider;
 import edu.brown.cs.cocker.server.ServerConstants;
 import edu.brown.cs.cocker.server.ServerFileChangeBroadcaster;
+import edu.brown.cs.ivy.file.IvyLog;
 import edu.brown.cs.ivy.xml.IvyXmlWriter;
 
 class CockerSession implements ServerConstants {
@@ -147,7 +148,7 @@ private void commitSearchContext()
       search_context = null;
     }
    catch (IOException e) {
-      System.err.println("COCKER: Problem doing commit: " + e);
+      IvyLog.logE("COCKER","Problem doing commit",e);
     }
 }
 
@@ -185,7 +186,7 @@ private void removeFileFromIndex(ServerFile file)
       search_context.removeFileFromIndex(file);
     }
    catch (IOException e) {
-      System.err.println("COCKER: Problem removing file: " + e);
+      IvyLog.logE("COCKER","Problem removing file",e);
     }
 }
 
@@ -212,7 +213,7 @@ private void rollbackSearchContext()
       search_context = null;
     }
    catch (IOException e) {
-      System.err.println("COCKER: Problem with rollback: " + e);
+      IvyLog.logE("COCKER","Problem with rollback",e);
     }
 }
 

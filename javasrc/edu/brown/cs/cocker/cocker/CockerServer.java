@@ -47,7 +47,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Date;
 import java.util.List;
-import java.util.Properties;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -63,6 +62,7 @@ import edu.brown.cs.cocker.analysis.AnalysisConstants;
 import edu.brown.cs.ivy.xml.IvyXml;
 import edu.brown.cs.ivy.xml.IvyXmlWriter;
 import edu.brown.cs.ivy.file.IvyFile;
+import edu.brown.cs.ivy.file.IvyLog;
 
 import org.eclipse.jdt.core.dom.*;
 import org.apache.lucene.index.Term;
@@ -71,8 +71,6 @@ import org.apache.lucene.search.Query;
 import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.BooleanClause;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.PrintStream;
 
 public class CockerServer extends Server implements CockerConstants, ServerConstants, AnalysisConstants {
 
@@ -87,8 +85,8 @@ private CockerEngine the_engine;
 private long	update_interval;
 private Timer	server_timer;
 private Updater current_updater;
-private long    last_action;
-private long    idle_time;
+private long	last_action;
+private long	idle_time;
 private IdleCheck idle_checker;
 
 
@@ -106,6 +104,7 @@ public static void main(String[] args)
    int tpsize = DEFAULT_THREAD_POOL_SIZE;
    boolean log = true;
    File datapath = null;
+   IvyLog.LogLevel loglevel = IvyLog.LogLevel.DEBUG;
 
    for (int i = 0; i < args.length; ++i) {
       if (args[i].startsWith("-")) {
@@ -131,52 +130,37 @@ public static void main(String[] args)
 	 else if (args[i].startsWith("-nol")) {                        // -nolog :: NO LOGGING
 	    log = false;
 	  }
-         else if (args[i].startsWith("-l")) {                          // -log :: LOGGING
+	 else if (args[i].startsWith("-l")) {                          // -log :: LOGGING
 	    log = false;
 	  }
-         else if (args[i].startsWith("-dir") && i+1 < args.length) {   // -dir <data path>
-            datapath = new File(args[++i]);
-            datapath.mkdirs();
-            if (!datapath.exists()) {
-               badArgs();
-             }
-          }
+	 else if (args[i].startsWith("-dir") && i+1 < args.length) {   // -dir <data path>
+	    datapath = new File(args[++i]);
+	    datapath.mkdirs();
+	    if (!datapath.exists()) {
+	       badArgs();
+	     }
+	  }
 	 else badArgs();
        }
       else badArgs();
     }
-   
+
    if (datapath != null) {
       AnalysisConstants.Factory.setIndexDirectory(datapath);
-      if (port == 0) {
-         String tnm = AnalysisConstants.Factory.getAnalysisType().toString().toLowerCase();
-         File props = new File(datapath,PROPERTY_FILE_NAME + "." + tnm);
-         if (props.exists()) {
-            Properties p = new Properties();
-            try (FileInputStream fis = new FileInputStream(props)) {
-               p.load(fis);
-               port = Integer.parseInt(p.getProperty("port"));
-             }
-            catch (Exception e) { }
-          }
-       }
     }
 
    if (log) {
-      try {
-	 File idx = AnalysisConstants.Factory.getAnalysisType().getIndexPath();
-	 File f = new File(idx.getPath() + ".log");
-	 // f.delete();
-	 PrintStream ps = new PrintStream(f);
-	 System.setErr(ps);
-	 System.setOut(ps);
-	 IvyFile.updatePermissions(f,0666);
-       }
-      catch (IOException e) {
-	 System.err.println("COCKER: Problem creating log file: " + e);
-	 e.printStackTrace();
-       }
+      File idx = AnalysisConstants.Factory.getAnalysisType().getIndexPath();
+      File f = new File(idx.getPath() + ".log");
+      f.delete();
+      IvyLog.setupLogging("COCKER",false);
+      IvyLog.setLogFile(f);
+      IvyLog.setLogLevel(loglevel);
+      IvyLog.useStdErr(false);
+      IvyFile.updatePermissions(f,0666);
     }
+   
+   IvyLog.logI("COCKER","Ready to start " + datapath + " " + port + " " + tpsize);
 
    CockerServer cs = new CockerServer(datapath,port,tpsize);
 
@@ -184,6 +168,7 @@ public static void main(String[] args)
       cs.start();
     }
    catch (IOException e) {
+      IvyLog.logE("COCKER","Problem starting server: ",e);
       System.err.println("COCKER: Problem starting server: " + e);
       System.exit(1);
     }
@@ -209,21 +194,21 @@ private CockerServer(File datapath,int port,int threadPoolSize)
 
    try {
       the_engine = new CockerEngine();
-      
+
       ResourceFinder rf;
       if (datapath != null) {
-         File pfile = new File(datapath,PROPERTY_FILE_NAME);
-         setProperties(pfile);
-         String tnm = AnalysisConstants.Factory.getAnalysisType().toString().toLowerCase();
-         File pfile1 = new File(datapath,PROPERTY_FILE_NAME + "." + tnm);
-         setProperties(pfile1);
+	 File pfile = new File(datapath,PROPERTY_FILE_NAME);
+	 setProperties(pfile);
+	 String tnm = AnalysisConstants.Factory.getAnalysisType().toString().toLowerCase();
+	 File pfile1 = new File(datapath,PROPERTY_FILE_NAME + "." + tnm);
+	 setProperties(pfile1);
        }
       else {
-         rf = new ResourceFinder("COCKER_HOME");
-         InputStream ins = rf.getInputStream(PROPERTY_FILE_NAME);
-         setProperties(ins);
+	 rf = new ResourceFinder("COCKER_HOME");
+	 InputStream ins = rf.getInputStream(PROPERTY_FILE_NAME);
+	 setProperties(ins);
        }
-      
+
       update_interval = getLongProperty("UpdateInterval",DEFAULT_UPDATE_INTERVAL);
       last_action = System.currentTimeMillis();
       idle_time = 0;
@@ -232,8 +217,8 @@ private CockerServer(File datapath,int port,int threadPoolSize)
       current_updater = null;
       setRequestCallback(new CockerHandleRequestCallback());
       if (datapath != null) {
-         int wc = getIntProperty("WebClients",0);
-         setWebClients(wc);
+	 int wc = getIntProperty("WebClients",0);
+	 setWebClients(wc);
        }
     }
    catch (IOException e) {
@@ -271,7 +256,7 @@ CockerEngine getEngine()
    Date upt = new Date(System.currentTimeMillis() + UPDATE_DELAY);
    setUpdateTime(update_interval,upt);
 
-   System.err.println("COCKER: Server started");
+   IvyLog.logI("COCKER","Server started");
 }
 
 
@@ -304,9 +289,9 @@ private void setUpdateTime(long interval,Date next)
 
 
 /********************************************************************************/
-/*                                                                              */
-/*      Handle idle timeout                                                     */
-/*                                                                              */
+/*										*/
+/*	Handle idle timeout							*/
+/*										*/
 /********************************************************************************/
 
 private void setIdleTime(long interval)
@@ -322,7 +307,7 @@ private synchronized void noteAction()
    if (idle_checker != null) idle_checker.cancel();
    idle_checker = null;
    last_action = System.currentTimeMillis();
-   
+
    if (idle_time != 0) {
       idle_checker = new IdleCheck();
       server_timer.schedule(idle_checker,idle_time);
@@ -333,11 +318,11 @@ private synchronized void noteAction()
 private synchronized void checkIdle()
 {
    if (idle_time == 0) return;
-   
+
    long now = System.currentTimeMillis();
    if (now - last_action < idle_time) return;
-   
-   IvyXmlWriter xw = new IvyXmlWriter();   
+
+   IvyXmlWriter xw = new IvyXmlWriter();
    xw.begin("COMMAND");
    xw.field("CMD","STOP");
    xw.end("COMMAND");
@@ -347,7 +332,7 @@ private synchronized void checkIdle()
       getRequestCallback().handleMessage(cmd,null,this);
     }
    catch (MalformedMessageException e) {
-      System.err.println("COCKER: Bad exit message: " + e);
+      IvyLog.logE("COCKER","Bad exit message: " + xw.toString(),e);
     }
 }
 
@@ -355,12 +340,12 @@ private synchronized void checkIdle()
 private class IdleCheck extends TimerTask {
 
     IdleCheck() { }
-    
+
     @Override public void run() {
        checkIdle();
      }
-    
-}       // end of inner class IdleCheck
+
+}	// end of inner class IdleCheck
 
 
 private void showSchedule(IvyXmlWriter xw)
@@ -394,68 +379,68 @@ private class CockerHandleRequestCallback extends ServerRequestCallback {
       noteAction();
       if (IvyXml.isElement(xml,"COMMAND")) {
          String cmd = IvyXml.getAttrString(xml,"CMD");
-         System.err.println("COCKER: Handle command: " + cmd);
+         IvyLog.logI("COCKER","Handle command: " + cmd);
          try {
             boolean done = true;
             boolean output = false;
             ServerOperation op = null;
             switch (cmd) {
                case "CODEQUERY" :
-                  codequery(IvyXml.getAttrInt(xml,"MAX"),
-                        IvyXml.getTextElement(xml,"CODE"),
-                        IvyXml.getAttrEnum(xml,"TYPE",ChunkType.STATEMENTS),
-                        IvyXml.getTextElement(xml,"DATA"),
-                        IvyXml.getTextElement(xml,"SEARCHSTRATEGY"),
-                        server,xw);
-                  output = true;
-                  break;
+        	  codequery(IvyXml.getAttrInt(xml,"MAX"),
+        		IvyXml.getTextElement(xml,"CODE"),
+        		IvyXml.getAttrEnum(xml,"TYPE",ChunkType.STATEMENTS),
+        		IvyXml.getTextElement(xml,"DATA"),
+        		IvyXml.getTextElement(xml,"SEARCHSTRATEGY"),
+        		server,xw);
+        	  output = true;
+        	  break;
                case "SYNCH" :
-                  op = new CockerOperation.Synchronize();
-                  break;
+        	  op = new CockerOperation.Synchronize();
+        	  break;
                case "OPTIMIZE" :
-                  op = new CockerOperation.Optimize();
-                  break;
+        	  op = new CockerOperation.Optimize();
+        	  break;
                case "UPDATE" :
-                  op = new CockerOperation.Update();
-                  break;
+        	  op = new CockerOperation.Update();
+        	  break;
                case "MONITOR" :
-                  op = new CockerOperation.Monitor(IvyXml.getTextElements(xml,"FILE"));
-                  break;
+        	  op = new CockerOperation.Monitor(IvyXml.getTextElements(xml,"FILE"));
+        	  break;
                case "UNMONITOR" :
-                  op = new CockerOperation.Unmonitor(IvyXml.getTextElements(xml,"FILE"));
-                  break;
+        	  op = new CockerOperation.Unmonitor(IvyXml.getTextElements(xml,"FILE"));
+        	  break;
                case "BLACKLIST" :
-                  op = new CockerOperation.Blacklist(IvyXml.getTextElements(xml,"FILE"));
-                  break;
+        	  op = new CockerOperation.Blacklist(IvyXml.getTextElements(xml,"FILE"));
+        	  break;
                case "WHITELIST" :
-                  op = new CockerOperation.Whitelist(IvyXml.getTextElements(xml,"FILE"));
-                  break;
+        	  op = new CockerOperation.Whitelist(IvyXml.getTextElements(xml,"FILE"));
+        	  break;
                case "UPDATETIME" :
-                  setUpdateTime(IvyXml.getAttrLong(xml,"INTERVAL"),IvyXml.getAttrDate(xml,"WHEN"));
-                  break;
+        	  setUpdateTime(IvyXml.getAttrLong(xml,"INTERVAL"),IvyXml.getAttrDate(xml,"WHEN"));
+        	  break;
                case "IDLETIME" :
-                  setIdleTime(IvyXml.getAttrLong(xml,"INTERVAL"));
-                  break;
+        	  setIdleTime(IvyXml.getAttrLong(xml,"INTERVAL"));
+        	  break;
                case "SCHEDULE" :
-                  showSchedule(xw);
-                  output = true;
-                  break;
+        	  showSchedule(xw);
+        	  output = true;
+        	  break;
                case "FILES" :
-                  getEngine().showFiles(xw);
-                  output = true;
-                  break;
+        	  getEngine().showFiles(xw);
+        	  output = true;
+        	  break;
                case "GETFILE" :
-                  File f = new File(IvyXml.getAttrString(xml,"FILE"));
-                  try {
-                     String cnts = IvyFile.loadFile(f);
-                     xw.bytesElement("CONTENTS",cnts.getBytes());
-                   }
-                  catch (IOException e) { }
-                  output = true;
-                  break;
+        	  File f = new File(IvyXml.getAttrString(xml,"FILE"));
+        	  try {
+        	     String cnts = IvyFile.loadFile(f);
+        	     xw.bytesElement("CONTENTS",cnts.getBytes());
+        	   }
+        	  catch (IOException e) { }
+        	  output = true;
+        	  break;
                default :
-                  done = false;
-                  break;
+        	  done = false;
+        	  break;
              }
             if (op != null) {
                server.getOperationsManager().synchronousOperation(op);
@@ -482,84 +467,76 @@ private class CockerHandleRequestCallback extends ServerRequestCallback {
    private void codequery(int max,String code,ChunkType type,String data,String searchstrategy,Server s,IvyXmlWriter xw) throws IOException
    {
       noteAction();
-      
-      System.err.println("COCKER: QUERY " + searchstrategy + " " + data + " " + type + " " + code);
-      System.err.println("COCKER: --------------------------------");
-      
+
+      IvyLog.logI("COCKER","QUERY " + searchstrategy + " " + data + " " + type + " " + code);
+      IvyLog.logI("COCKER","--------------------------------");
+
       CockerServer cs = (CockerServer) s;
       AnalysisType anal = AnalysisConstants.Factory.getAnalysisType();
       String anal_str = anal.toString(); //E.g., KGRAM5WORDMD
       PatternTokenizer tokenizer = anal.createTokenizer();
       if (data != null) type = ChunkType.FILE;
-      
+
       //"code" is supposed to be the content of a Java class,
       //"node_list" is thus a list of size 1 which contains only
       //the parsed CompilationUnit which corresponds to "code"
       List<ASTNode> node_list = anal.parseIntoASTNodes(code,type);
       ASTNode root = node_list.get(0);
       List<PatternToken> toks = tokenizer.getTokens(root,data);
-      System.err.println("COCKER: QUERY TOKENS:");
+      IvyLog.logI("COCKER","QUERY TOKENS:");
       for (PatternToken tok : toks) {
-         System.err.print(tok.getText());
-         int tok_prop = tok.getProp();
-         System.err.print("(p"+tok_prop+") ");
-         
-         //if (tok_prop == 0) { System.err.print("(b) "); }
-         //else if (tok_prop == 1) { System.err.print("(lc) "); }
-         //else if (tok_prop == 2) { System.err.print("(rc) "); }
-         //else if (tok_prop == 3) { System.err.print("(gc) "); }
-         //else { System.err.print(" "); }
+	 IvyLog.logI1("COCKER",tok.getText());
+	 int tok_prop = tok.getProp();
+	 IvyLog.logI1("COCKER","(p"+tok_prop+") ");
        }
-      System.err.println();
-      
+
       Query q = null;
       BooleanQuery.setMaxClauseCount(2048); //Query tokens CANNOT exceed this number
       BooleanQuery bq = new BooleanQuery();
       bq.setMinimumNumberShouldMatch(toks.size()/8); //A candidate code SHOULD AT LEAST match this number of tokens
-      
+
       boolean is_item0_onefield = (anal_str.startsWith("ITEM0") && anal_str.endsWith("ONEFIELD"));
       for (PatternToken pt : toks) {
-         Term t = new Term(SEARCH_FIELD,pt.getText()); //Specified searching the "code" (SEARCH_FIELD) field
-         TermQuery tq = new TermQuery(t);
-         int pt_prop = pt.getProp();
-         if (is_item0_onefield) {
-            if (pt_prop == 0) { tq.setBoost(10); } //class name
-            else if (pt_prop == 1) { tq.setBoost(10); } //method name
-            else if (pt_prop == 2) { tq.setBoost(5); } //parameter type name
-            else if (pt_prop == 3) { tq.setBoost(5); } //parameter name
-            else if (pt_prop == 4) { tq.setBoost(2.5f); } //method call name
-            else if (pt_prop == 5) { tq.setBoost(1.25f); } //type name
-            else if (pt_prop == 6) { tq.setBoost(0.625f); } //var name
-          }
-         else {
-            if ("bug_weighted".equals(searchstrategy)) {
-               if (pt_prop == 0) { tq.setBoost(2); }
-               else if (pt_prop == 1) { tq.setBoost(1); }
-               else if (pt_prop == 2) { tq.setBoost(0.5f); }
-               else if (pt_prop == 3) { tq.setBoost(0.25f); }
-             }
-            else if ("ctxt_weighted".equals(searchstrategy)) {
-               if (pt_prop == 0) { tq.setBoost(0.5f); }
-               else if (pt_prop == 1) { tq.setBoost(1); }
-               else if (pt_prop == 2) { tq.setBoost(0.5f); }
-               else if (pt_prop == 3) { tq.setBoost(0.25f); }
-             }
-          }
-         bq.add(tq,BooleanClause.Occur.SHOULD); //May use *BooleanClause.Occur.MUST* for certain tokens (e.g., API calls)
+	 Term t = new Term(SEARCH_FIELD,pt.getText()); //Specified searching the "code" (SEARCH_FIELD) field
+	 TermQuery tq = new TermQuery(t);
+	 int pt_prop = pt.getProp();
+	 if (is_item0_onefield) {
+	    if (pt_prop == 0) { tq.setBoost(10); } //class name
+	    else if (pt_prop == 1) { tq.setBoost(10); } //method name
+	    else if (pt_prop == 2) { tq.setBoost(5); } //parameter type name
+	    else if (pt_prop == 3) { tq.setBoost(5); } //parameter name
+	    else if (pt_prop == 4) { tq.setBoost(2.5f); } //method call name
+	    else if (pt_prop == 5) { tq.setBoost(1.25f); } //type name
+	    else if (pt_prop == 6) { tq.setBoost(0.625f); } //var name
+	  }
+	 else {
+	    if ("bug_weighted".equals(searchstrategy)) {
+	       if (pt_prop == 0) { tq.setBoost(2); }
+	       else if (pt_prop == 1) { tq.setBoost(1); }
+	       else if (pt_prop == 2) { tq.setBoost(0.5f); }
+	       else if (pt_prop == 3) { tq.setBoost(0.25f); }
+	     }
+	    else if ("ctxt_weighted".equals(searchstrategy)) {
+	       if (pt_prop == 0) { tq.setBoost(0.5f); }
+	       else if (pt_prop == 1) { tq.setBoost(1); }
+	       else if (pt_prop == 2) { tq.setBoost(0.5f); }
+	       else if (pt_prop == 3) { tq.setBoost(0.25f); }
+	     }
+	  }
+	 bq.add(tq,BooleanClause.Occur.SHOULD); //May use *BooleanClause.Occur.MUST* for certain tokens (e.g., API calls)
        }
-      
+
       q = bq;
-      
+
       List<SearchResult> rslt = cs.getEngine().search(q,max);
       for (SearchResult r : rslt) {
-         xw.begin("FILE");
-         xw.field("SCORE",r.getScore());
-         xw.field("MLOC",r.getFileLoc());
-         xw.text(r.getFilePath());
-         xw.end("FILE");
-         //System.err.println("COCKER: --- RESULT: " + r.getFilePath() + " " + r.getFileLoc() + " " + r.getScore());
+	 xw.begin("FILE");
+	 xw.field("SCORE",r.getScore());
+	 xw.field("MLOC",r.getFileLoc());
+	 xw.text(r.getFilePath());
+	 xw.end("FILE");
        }
-      System.err.println("COCKER: ---END----------------------------------");
+      IvyLog.logI("COCKER","---END----------------------------------");
    }
 
 
@@ -583,8 +560,8 @@ private class Updater extends TimerTask {
       ServerOperation op = new CockerOperation.Update();
       getOperationsManager().synchronousOperation(op);
     }
-   
-}       // end of inner class Updater
+
+}	// end of inner class Updater
 
 } // end of class CockerServer
 

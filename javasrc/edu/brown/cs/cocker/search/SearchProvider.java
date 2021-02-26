@@ -66,6 +66,7 @@ import org.apache.lucene.search.Query;
 import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.document.Document;
 import edu.brown.cs.ivy.file.IvyFile;
+import edu.brown.cs.ivy.file.IvyLog;
 
 
 public class SearchProvider implements AnalysisConstants {
@@ -191,8 +192,7 @@ public List<SearchResult> search(String searchString,int max)
       return search(query,max);
     }
    catch (ParseException e) {
-      System.err.println("Query parsing problem: " + e);
-      e.printStackTrace();
+      IvyLog.logE("SEARCH","Query parsing problem: " + e,e);
     }
 
    return Collections.emptyList();
@@ -215,18 +215,10 @@ public List<SearchResult> search(Query query,int max)
 	 Document hitdoc = searcher.doc(hit.doc);
 	 //hitdoc.get("mloc") can be NULL
 	 result.add(new SearchResult(hitdoc.get("path"),hitdoc.get("mloc"),hit.score));
-	 /*****************/
-	 /*
-	 System.err.println("Doc ID: " + hit.doc);
-	 Explanation explain = searcher.explain(query,hit.doc);
-	 System.err.println(explain);
-	 */
-	 /*****************/
        }
     }
    catch (IOException e) {
-      System.err.println("Search problem: " + e);
-      e.printStackTrace();
+      IvyLog.logE("SEARCH","Search problem: " + e,e);
     }
 
    return result;

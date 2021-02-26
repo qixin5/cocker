@@ -44,10 +44,6 @@
 package edu.brown.cs.cocker.server;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.util.Properties;
-
-import edu.brown.cs.cocker.cocker.CockerConstants;
 
 public class ServerConnectionInformation {
 
@@ -132,17 +128,6 @@ public void setDatapath(File datapath)
 {
    if (datapath == null) cci_datapath = null;
    else cci_datapath = datapath.getPath();
-   if (cci_port == 0) {
-      File props = new File(datapath,CockerConstants.PROPERTY_FILE_NAME);
-      if (props.exists()) {
-         Properties p = new Properties();
-         try (FileInputStream fis = new FileInputStream(props)) {
-            p.load(fis);
-            cci_port = Integer.parseInt(p.getProperty("port"));
-          }
-         catch (Exception e) { }
-       } 
-    }
 }
 
 

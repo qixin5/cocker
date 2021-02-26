@@ -57,6 +57,7 @@ import edu.brown.cs.cocker.server.ServerConstants;
 import edu.brown.cs.cocker.server.ServerSession;
 import edu.brown.cs.cocker.analysis.AnalysisConstants;
 import edu.brown.cs.ivy.exec.IvyExec;
+import edu.brown.cs.ivy.file.IvyLog;
 import edu.brown.cs.ivy.xml.IvyXml;
 import edu.brown.cs.ivy.xml.IvyXmlWriter;
 
@@ -429,7 +430,7 @@ public void startServer()
       // cmd.append(" > /vol/cocker/server_" + AnalysisConstants.Factory.getAnalysisType().toString());
 
       // set thread pool size, timeout
-      System.err.println("RUN SERVER: " + cmd);
+      IvyLog.logI("APPLICATION","RUN SERVER: " + cmd);
       new IvyExec(cmd.toString());
 
       for (int i = 0; i < 10; ++i) {
@@ -454,8 +455,7 @@ public void startServer()
       throw new IOException("Server not started");
     }
    catch (IOException ioe) {
-      System.err.println("Could not start server.");
-      System.err.println("Error: " + ioe.getMessage());
+      IvyLog.logE("APPLICATION","Could not start server: " + ioe);
     }
 }
 

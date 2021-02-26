@@ -47,6 +47,9 @@ import java.io.IOException;
 import org.apache.lucene.analysis.Tokenizer;
 import org.apache.lucene.analysis.tokenattributes.*;
 import org.eclipse.jdt.core.dom.ASTNode;
+
+import edu.brown.cs.ivy.file.IvyLog;
+
 import java.util.List;
 
 
@@ -101,33 +104,12 @@ public void reset() throws IOException
    //Indexing
    try {
       AnalysisType anal_type = Factory.getAnalysisType();
-      /*
-      if (anal_type.toString().startsWith("RBSTM")) {
-	  String cnts = anal_type.parseIntoText(input);
-	  token_list = our_tokenizer.getTokens(cnts);
-      }
-      else {
-	  List<ASTNode> node_list = anal_type.parseIntoASTNodes(input);
-	  token_list = our_tokenizer.getTokens(node_list);
-      }
-      */
       List<ASTNode> node_list = anal_type.parseIntoASTNodes(input); //input is a field (of type Reader) of Lucene's Tokenizer
-      token_list = our_tokenizer.getTokens(node_list); /* Depends on the tokenizer. E.g., many analysis methods use AFGK5W whose method getTokens(node_list) generates two list of pattern tokens (kgrams & words) and merges them as one list. Which tokenizer is determined by the *class name* passed as the argument for an analysis method's enum structure.*/
-      //==================
-      /*
-      String tokens_str = "";
-      for (PatternToken token : token_list) {
-	  tokens_str += token.getText() + " ";
-      }
-      System.err.println("--- Indexed Tokens ---");
-      System.err.println(tokens_str);
-      */
-      //==================
+      token_list = our_tokenizer.getTokens(node_list);
     }
    catch (IOException e) { }
    catch (Throwable t) {
-      System.err.println("Problem parsing file");
-      t.printStackTrace();
+      IvyLog.logE("ANALYSIS","Problem parsing file",t);
     }
 }
 

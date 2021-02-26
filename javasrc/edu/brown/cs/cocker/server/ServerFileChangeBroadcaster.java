@@ -58,6 +58,7 @@ import java.util.Set;
 import javax.swing.event.EventListenerList;
 
 import edu.brown.cs.ivy.file.IvyDatabase;
+import edu.brown.cs.ivy.file.IvyLog;
 import edu.brown.cs.ivy.xml.IvyXmlWriter;
 
 import java.sql.PreparedStatement;
@@ -116,16 +117,36 @@ private ServerFileChangeBroadcaster()
    String dbname = AnalysisConstants.Factory.getAnalysisType().getDatabaseName();
    ResourceFinder rf = new ResourceFinder("COCKER_HOME");
    rf.setDatabaseProps("Cocker");
-   try {
-      db_connection = IvyDatabase.openDatabase(dbname);
+   SQLException laste = null;
+   boolean setup = false;
+   for (int i = 0; i < 2; ++i) {
+      try {
+	 db_connection = IvyDatabase.openDatabase(dbname);
+         if (setup) setupDatabase();
+	 break;
+       }
+      catch (SQLException e) {
+	 laste = e;
+       }
+      try {
+         IvyLog.logI("SERVER","Creating initial database");
+         Connection c = IvyDatabase.openDefaultDatabase();
+         Statement statement = c.createStatement();
+         String create = "CREATE DATABASE " + dbname;
+         statement.executeUpdate(create);
+         c.close();
+         setup = true;
+       }
+      catch (SQLException e) {
+         laste = e;
+         break;
+       }
     }
-   catch (SQLException e) {
-      System.err.println("COCKER: Problem connecting to database: " + e);
-      e.printStackTrace();
-      db_connection = null;
+
+   if (db_connection == null) {
+      IvyLog.logE("SERVER","Problem connecting to database: " + laste,laste);
     }
 }
-
 
 
 
@@ -422,7 +443,7 @@ private void clearSynchronizations()
 
 void noteSynchronized(ServerFileImpl file)
 {
-   System.err.println("COCKER: Note synchronized " + file);
+   IvyLog.logD("SERVER","Note synchronized " + file);
 
    if (!file.isFile()) {
       if (file.getFile().isDirectory()) return;
@@ -440,7 +461,7 @@ void noteSynchronized(ServerFileImpl file)
 
 public void rollback()
 {
-   System.err.println("COCKER: rollback");
+   IvyLog.logI("SERVER","Rollback");
    pending_synchronized.clear();
 }
 
@@ -448,7 +469,7 @@ public void rollback()
 
 public void commit()
 {
-   System.err.println("COCKER: begin commit " + pending_synchronized.size());
+   IvyLog.logI("SERVER","Begin commit " + pending_synchronized.size());
    if (pending_synchronized.isEmpty()) return;
 
    if (db_connection != null) {
@@ -473,29 +494,29 @@ public void commit()
 	       ++ct1;
 	     }
 	  }
-	 System.err.println("COCKER: DB UPDATE " + ct1 + " " + ct2);
+	 IvyLog.logD("SERVER","DB UPDATE " + ct1 + " " + ct2);
 	 int [] sts = null;
 	 if (ct1 > 0) sts = ps1.executeBatch();
 	 for (int i = 0; i < ct1; ++i) {
-	    System.err.println("COCKER: COMMIT STATUS NEW: " + sts[i]);
+	    IvyLog.logD("SERVER","COMMIT STATUS NEW: " + sts[i]);
 	  }
 	 if (ct2 > 0) sts = ps2.executeBatch();
 	 for (int i = 0; i < ct2; ++i) {
-	    System.err.println("COCKER: COMMIT STATUS OLD: " + sts[i]);
+	    IvyLog.logD("SERVER","COMMIT STATUS OLD: " + sts[i]);
 	  }
        }
       catch (SQLException e) {
-	 System.err.println("COCKER: COMMIT SQL EXCEPTION : " + e.getMessage() +
+	IvyLog.logE("SERVER","COMMIT SQL EXCEPTION : " + e.getMessage() +
 			       ", " + e.getSQLState() + ", " + e.getErrorCode());
 	 Iterator<Throwable> iter = e.iterator();
 	 while(iter.hasNext()) {
 	    SQLException ee = (SQLException) iter.next();
-	    System.err.println("COCKER: COMMIT SQL EXCEPTION : " + ee.getMessage() +
+	    IvyLog.logE("SERVER","COMMIT SQL EXCEPTION : " + ee.getMessage() +
 				  ", " + ee.getSQLState() + ", " + ee.getErrorCode());
 	  }
        }
       catch (Throwable e) {
-	 System.err.println("COCKER: database problem: " + e);
+	 IvyLog.logE("SERVER","Database problem",e);
 	 e.printStackTrace();
        }
     }
@@ -507,7 +528,7 @@ public void commit()
 
 private void update(String tbl,boolean add,File f)
 {
-   System.err.println("COCKER: Update " + add + " " + tbl + " " + f + " " + db_connection);
+   IvyLog.logI("SERVER","Update " + add + " " + tbl + " " + f + " " + db_connection);
 
    if (db_connection == null) return;
 
@@ -525,14 +546,13 @@ private void update(String tbl,boolean add,File f)
 
    try {
       Statement st = db_connection.createStatement();
-      System.err.println("COCKER: Database: " + q);
+      IvyLog.logD("SERVER","Database: " + q);
       int sts = st.executeUpdate(q);
-      System.err.println("COCKER: update status " + sts);
+      IvyLog.logD("SERVER","Update status " + sts);
       st.close();
     }
    catch (SQLException e) {
-      System.err.println("COCKER: Database problem: " + e);
-      e.printStackTrace();
+      IvyLog.logE("SERVER","Database problem: " + e,e);
     }
 }
 
@@ -650,7 +670,7 @@ private class SynchronizationVisitor implements FileSystemVisitor {
     }
 
    @Override public void visitFile(ServerFileImpl tf) {
-      System.err.println("COCKER: visitF " + tf.getFile());
+      IvyLog.logD("SERVER","VisitF " + tf.getFile());
       if (!exploration_tracker.add(tf)) return;
 
       if (!tf.hasBeenSynchronized()) fireFileChangeCreated(tf);
@@ -661,7 +681,7 @@ private class SynchronizationVisitor implements FileSystemVisitor {
     }
 
    @Override public void visitContainer(ServerFileImpl dir) {
-      System.err.println("COCKER: visitD " + dir.getFile());
+      IvyLog.logD("SERVER","VisitD " + dir.getFile());
 
       if (!exploration_tracker.add(dir)) return;
 

@@ -50,6 +50,7 @@ import java.util.List;
 import edu.brown.cs.cocker.search.SearchProvider;
 import edu.brown.cs.cocker.search.SearchResult;
 import edu.brown.cs.cocker.server.ServerFileChangeBroadcaster;
+import edu.brown.cs.ivy.file.IvyLog;
 import edu.brown.cs.ivy.xml.IvyXmlWriter;
 
 import org.apache.lucene.search.Query;
@@ -217,8 +218,7 @@ private void executeOperationInSession(EngineOperationCallback callback)
       throw ioe;
     }
    catch (Throwable t) {
-      System.err.println("Problem with operation: " + t);
-      t.printStackTrace();
+      IvyLog.logE("COCKER","Problem with operation",t);
     }
    finally {
       if (succeeded) {

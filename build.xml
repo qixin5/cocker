@@ -130,6 +130,8 @@
 	 <zipfileset src='${COCKER}/lib/lucene-queries-5.0.0.jar' excludes='META-INF/*' />
 	 <zipfileset src='${COCKER}/lib/lucene-queryparser-5.0.0.jar' excludes='META-INF/*' />
       </jar>
+      <copy file='cocker.jar' tofile='${PRO}/cocker/lib/cocker.jar' verbose='true' />
+      <copy file='cocker.jar' tofile='${PRO}/ivy/lib/cocker.jar' verbose='true' />
    </target>
 
 </project>

@@ -6,6 +6,8 @@ import java.util.List;
 import java.util.ArrayList;
 import org.apache.commons.io.FileUtils;
 import org.eclipse.jdt.core.dom.*;
+
+import edu.brown.cs.ivy.file.IvyLog;
 import edu.brown.cs.ivy.jcomp.*;
 
 
@@ -14,31 +16,29 @@ public class ASTNodeLoader
     private static JcompControl jcc = new JcompControl();
     
     public static ASTNode getASTNode(File f) {
-	String fctnt = null;
-	try { fctnt = FileUtils.readFileToString(f, (String)null); }
-	catch (IOException e) {
-	    System.err.println(e);
-	    e.printStackTrace();
+       String fctnt = null;
+       try { fctnt = FileUtils.readFileToString(f, (String)null); }
+       catch (IOException e) {
+          IvyLog.logE("UTIL","Problem getting AST node",e);
 	}
-	return getASTNode(fctnt);
-    }
-
+       return getASTNode(fctnt);
+     }
+    
     public static ASTNode getASTNode(String fctnt) {
-        if (fctnt == null) { return null; }
-        return JcompAst.parseSourceFile(fctnt);
-    }
+       if (fctnt == null) { return null; }
+       return JcompAst.parseSourceFile(fctnt);
+     }
     
     public static ASTNode getResolvedASTNode(File f) {
-        String fpath = f.getAbsolutePath();
-        String fctnt = null;
-        try { fctnt = FileUtils.readFileToString(f, (String)null); }
-        catch (IOException e) {
-            System.err.println(e);
-            e.printStackTrace();
+       String fpath = f.getAbsolutePath();
+       String fctnt = null;
+       try { fctnt = FileUtils.readFileToString(f, (String)null); }
+       catch (IOException e) {
+          IvyLog.logE("UTIL","Problem getting AST Node:,e");
         }
-        return getResolvedASTNode(fpath, fctnt);
-    }
-
+       return getResolvedASTNode(fpath, fctnt);
+     }
+    
     public static ASTNode getResolvedASTNode(String fpath, String fctnt) {
 	if (fpath == null || fctnt == null) { return null; }
 	ASTSource ast_src = new ASTSource(fpath, fctnt);

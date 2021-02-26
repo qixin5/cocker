@@ -11,6 +11,7 @@ import java.io.*;
 import java.util.*;
 
 import edu.brown.cs.cocker.util.ResourceFinder;
+import edu.brown.cs.ivy.file.IvyLog;
 
 
 public class RebaseWordFactory implements RebaseWordConstants
@@ -217,7 +218,7 @@ private static void setupWordSets()
           }
        }
       catch (IOException e) {
-         System.err.println("Problem reading word file: " + e);
+         IvyLog.logE("ANALYSIS","Problem reading word file: " + e);
        }
     }
 }

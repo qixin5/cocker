@@ -31,6 +31,7 @@ import java.io.InputStream;
 import java.net.URL;
 
 import edu.brown.cs.ivy.file.IvyDatabase;
+import edu.brown.cs.ivy.file.IvyLog;
 
 public class ResourceFinder
 {
@@ -110,7 +111,7 @@ public InputStream getInputStream(String name)
 
 public void setDatabaseProps(String pfx)
 {
-   InputStream ins = getInputStream("Database.props");
+   InputStream ins = null;
    
    if (ins == null) {
       File f1 = new File(System.getProperty("user.home"));
@@ -120,8 +121,31 @@ public void setDatabaseProps(String pfx)
       if (f3.exists()) {
          try {
             ins = new FileInputStream(f3);
+            IvyLog.logI("UTIL","Using database props: " + f3);
+
           }
          catch (IOException e) { }
+       }
+    }
+   
+   if (ins == null) {
+      File f1 = new File(System.getProperty("user.home"));
+      File f2 = new File(f1,".ivy");
+      String nm = "Database.props";
+      File f3 = new File(f2,nm);
+      if (f3.exists()) {
+         try {
+            ins = new FileInputStream(f3);
+            IvyLog.logI("UTIL","Using database props: " + f3);
+          }
+         catch (IOException e) { }
+       }
+    }
+   
+   if (ins == null) {
+      ins = getInputStream("Database.props");
+      if (ins != null) {
+         IvyLog.logI("UTIL","Found database props in resource file");
        }
     }
    
@@ -130,7 +154,7 @@ public void setDatabaseProps(String pfx)
          IvyDatabase.setProperties(ins);
        }
       catch (Exception e) {
-         System.err.println("Problem setting up database access: " + e);
+         IvyLog.logE("UTIL","Problem setting up database access: " + e,e);
 	 System.exit(1);
        }
     }

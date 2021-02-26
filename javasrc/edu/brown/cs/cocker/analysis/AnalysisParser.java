@@ -47,6 +47,8 @@ package edu.brown.cs.cocker.analysis;
 
 import java.util.*;
 import org.eclipse.jdt.core.dom.*;
+
+import edu.brown.cs.ivy.file.IvyLog;
 import edu.brown.cs.ivy.jcomp.*;
 //import asts.*;
 import edu.brown.cs.cocker.util.ASTNodeFinder;
@@ -107,8 +109,7 @@ ASTNode parseIntoASTNode(String cnts,ChunkType type)
       return root;
     }
    catch (Throwable t) {
-      System.err.println("Problem parsing file");
-      t.printStackTrace();
+      IvyLog.logE("ANALYSIS","Problem parsing file",t);
     }
    return null;
 }
@@ -139,13 +140,12 @@ List<ASTNode> parseIntoASTNodes(String cnts, String loc, ChunkType type)
       CompilationUnit root_cu = (CompilationUnit) root;
       List<ASTNode> target_node_list = ASTNodeFinder.find(root_cu, loc);
       if (target_node_list.isEmpty()) {
-	  System.err.println("Location string is invalid: " + loc);
+	  IvyLog.logE("ANALYSIS","Location string is invalid: " + loc);
       }
       return target_node_list;
     }
    catch (Throwable t) {
-      System.err.println("Problem parsing file");
-      t.printStackTrace();
+      IvyLog.logE("ANALYSIS","Problem parsing file",t);
     }
    return parse_node_list;
 }

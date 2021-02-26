@@ -57,6 +57,7 @@ import org.apache.lucene.store.FSDirectory;
 import java.nio.file.Path;
 
 import edu.brown.cs.ivy.file.IvyFile;
+import edu.brown.cs.ivy.file.IvyLog;
 import edu.brown.cs.cocker.analysis.AnalysisCodeReader;
 import edu.brown.cs.cocker.analysis.AnalysisConstants;
 import edu.brown.cs.cocker.util.*;
@@ -144,8 +145,8 @@ public void addFileToIndex(ServerFile file) throws IOException
     //try { cu = (CompilationUnit) ASTUtils.getResolvedASTNode(fpath, ftext); }
     try { cu = (CompilationUnit) ASTNodeLoader.getResolvedASTNode(f); }
     catch (Throwable t) {
-	System.err.println("COCKER: problem parsing file " + fpath);
-	t.printStackTrace(); }
+	IvyLog.logE("SEARCH","Problem parsing file " + fpath,t);
+     }
     if (cu == null) { return; }
     //List<MethodDeclaration> md_list = ASTUtils.getMethodDeclarations(cu);
     List<MethodDeclaration> md_list = MethodDeclarationGetter.getMethodDeclarations(cu);
@@ -200,7 +201,7 @@ private void addMethodToIndex(CompilationUnit cu, List<MethodDeclaration> md_lis
 	String loc = "slc:" + cu.getLineNumber(start_pos) + "," + cu.getColumnNumber(start_pos);
 	int ex_start_pos = cu.getExtendedStartPosition(md); //including comments
 	int ex_length = cu.getExtendedLength(md); 
-	System.err.println("COCKER: add file " + fpath + ", " + loc);
+	IvyLog.logD("SEARCH","Add file " + fpath + ", " + loc);
 
         try {
            //Create a method reader
@@ -222,11 +223,10 @@ private void addMethodToIndex(CompilationUnit cu, List<MethodDeclaration> md_lis
            doc.add(new TextField("code",md_code_rdr));
 
            lucene_writer.addDocument(doc);
-           System.err.println("COCKER: done file " + fpath + ", " + loc);
+           IvyLog.logD("SEARCH","Done file " + fpath + ", " + loc);
          }
         catch (Throwable t) {
-           System.err.println("COCKER: problem scanning file " + fpath);
-           t.printStackTrace();
+           IvyLog.logE("SEARCH","Problem scanning file " + fpath,t);
          }
     }
 }
@@ -260,10 +260,10 @@ private void addCodeFragmentToIndex(CompilationUnit cu, List<MethodDeclaration> 
 		    ex_end_pos = cu.getExtendedStartPosition(ic_node) + cu.getExtendedLength(ic_node);
 		}
 	    }
-	    System.err.println("COCKER: add file " + fpath + ", " + slc_loc);
+	    IvyLog.logD("SEARCH","Add file " + fpath + ", " + slc_loc);
 
 	    if (("".equals(slc_loc)) || (ex_start_pos == -1) || (ex_end_pos == -1)) {
-		System.err.println("COCKER: problem scanning file " + fpath);
+		IvyLog.logE("SEARCH","Problem scanning file " + fpath);
 		continue;
 	    }
 	    
@@ -285,164 +285,15 @@ private void addCodeFragmentToIndex(CompilationUnit cu, List<MethodDeclaration> 
 		doc.add(new TextField("code",md_code_rdr));
 		
 		lucene_writer.addDocument(doc);
-		System.err.println("COCKER: done file " + fpath + ", " + slc_loc);
+		IvyLog.logD("SEARCH","Done file " + fpath + ", " + slc_loc);
 	    }
 	    catch (Throwable t) {
-		System.err.println("COCKER: problem scanning file " + fpath);
-		t.printStackTrace();
+		IvyLog.logE("SEARCH","Problem scanning file " + fpath,t);
 	    }
 	}        
     }
 
 }
-
-/*
-private void addMethodItem0ToIndex(CompilationUnit cu, List<MethodDeclaration> md_list, ServerFile file) throws IOException
-{
-    String fpath = file.getPath();
-    for (MethodDeclaration md : md_list) {
-	int start_pos = md.getStartPosition();
-	String loc = "slc:" + cu.getLineNumber(start_pos) + "," + cu.getColumnNumber(start_pos);
-	int ex_start_pos = cu.getExtendedStartPosition(md); //including comments
-	int ex_length = cu.getExtendedLength(md);
-	System.err.println("COCKER: add file " + fpath + ", " + loc);
-
-	try {
-	    List<ASTNode> node_list = new ArrayList<ASTNode>();
-	    node_list.add(md);
-	    IndexComponent ic = new IndexComponent(node_list);
-	    CodeItem ci = cie.extract(ic);
-	    if (ci != null && ci.isValid()) {
-		AnalysisCodeItemReader md_ci_rdr = new AnalysisCodeItemReader(file.getReader());
-		md_ci_rdr.setLocString(loc);
-		md_ci_rdr.setExtendedStartPosition(ex_start_pos);
-		md_ci_rdr.setExtendedEndPosition(ex_start_pos+ex_length);
-
-		List<String> ci_strs = new ArrayList<String>();
-		ci_strs.add(ci.getClassName());
-		ci_strs.add(ci.getMethodName());
-		List<String> param_names = ci.getParameterNames();
-		List<String> param_type_names = ci.getParameterTypeNames();
-		List<String> method_call_names = ci.getMethodCallNames();
-		List<String> type_names = ci.getTypeNames();
-		List<String> var_names = ci.getVariableNames();
-		for (String param_name : param_names) { ci_strs.add(param_name); }
-		for (String param_type_name : param_type_names) {
-		    ci_strs.add(param_type_name); }
-		for (String method_call_name : method_call_names) {
-		    ci_strs.add(method_call_name); }
-		for (String type_name : type_names) { ci_strs.add(type_name); }
-		for (String var_name : var_names) { ci_strs.add(var_name); }
-		
-		md_ci_rdr.setCodeItemStringList(ci_strs);
-
-		Document doc = new Document();
-		Field pathfield = new StringField("path",fpath,Field.Store.YES);
-		doc.add(pathfield);
-		doc.add(new LongField("modified",file.lastModified(),Field.Store.NO));
-		doc.add(new StringField("mloc",loc,Field.Store.YES));
-		doc.add(new TextField("code",md_ci_rdr));
-
-		lucene_writer.addDocument(doc);
-		System.err.println("COCKER: done file " + fpath + ", " + loc);
-	    }
-	    else {
-		System.err.println("COCKER: problem scanning file " + fpath);
-		System.err.println("The Code Item Extracted is Not Valid.");
-	    }
-	}
-	catch (Throwable t) {
-	    System.err.println("COCKER: problem scanning file " + fpath);
-	    t.printStackTrace();
-	}
-    }
-}    
-*/    
-
-/*
-private void addCodeFragmentItem0ToIndex(CompilationUnit cu, List<MethodDeclaration> md_list, ServerFile file, IndexComponentGenerator icgen, int index_k) throws IOException
-{
-    String fpath = file.getPath();
-    for (MethodDeclaration md : md_list) {
-	//Get the src-locations for all the components to be indexed
-	List<IndexComponent> ic_list = icgen.getIndexComponentsForMD(md, index_k);
-	for (IndexComponent ic : ic_list) {
-	    List<ASTNode> ic_node_list = ic.getNodeList();
-	    String slc_loc = "";
-	    int ic_node_list_size = ic_node_list.size();
-	    int ex_start_pos = -1;
-	    int ex_end_pos = -1;
-	    //Get the location string, extended start position and extended length for this component
-	    for (int i=0; i<ic_node_list_size; i++) {
-		ASTNode ic_node = ic_node_list.get(i);
-		int ic_node_start_pos = ic_node.getStartPosition();
-		if (i==0) {
-		    slc_loc = "slc:"+cu.getLineNumber(ic_node_start_pos)+","+cu.getColumnNumber(ic_node_start_pos);
-		    ex_start_pos = cu.getExtendedStartPosition(ic_node);
-		}
-		else {
-		    slc_loc += ";slc:"+cu.getLineNumber(ic_node_start_pos)+","+cu.getColumnNumber(ic_node_start_pos);
-		}
-		if (i==ic_node_list_size-1) {
-		    ex_end_pos = cu.getExtendedStartPosition(ic_node) + cu.getExtendedLength(ic_node);
-		}
-	    }
-	    System.err.println("COCKER: add file " + fpath + ", " + slc_loc);
-
-	    if (("".equals(slc_loc)) || (ex_start_pos == -1) || (ex_end_pos == -1)) {
-		System.err.println("COCKER: problem scanning file " + fpath);
-		continue;
-	    }
-
-	    try {
-		CodeItem ci = cie.extract(ic);
-		if (ci != null && ci.isValid()) {
-		    AnalysisCodeItemReader md_ci_rdr = new AnalysisCodeItemReader(file.getReader());
-		    md_ci_rdr.setLocString(loc);
-		    md_ci_rdr.setExtendedStartPosition(ex_start_pos);
-		    md_ci_rdr.setExtendedEndPosition(ex_end_pos);
-		    
-		    List<String> ci_strs = new ArrayList<String>();
-		    ci_strs.add(ci.getClassName());
-		    ci_strs.add(ci.getMethodName());
-		    List<String> param_names = ci.getParameterNames();
-		    List<String> param_type_names = ci.getParameterTypeNames();
-		    List<String> method_call_names = ci.getMethodCallNames();
-		    List<String> type_names = ci.getTypeNames();
-		    List<String> var_names = ci.getVariableNames();
-		    for (String param_name : param_names) { ci_strs.add(param_name); }
-		    for (String param_type_name : param_type_names) {
-			ci_strs.add(param_type_name); }
-		    for (String method_call_name : method_call_names) {
-			ci_strs.add(method_call_name); }
-		    for (String type_name : type_names) { ci_strs.add(type_name); }
-		    for (String var_name : var_names) { ci_strs.add(var_name); }
-		    
-		    md_ci_rdr.setCodeItemStringList(ci_strs);
-		    
-		    Document doc = new Document();
-		    Field pathfield = new StringField("path",fpath,Field.Store.YES);
-		    doc.add(pathfield);
-		    doc.add(new LongField("modified",file.lastModified(),Field.Store.NO));
-		    doc.add(new StringField("mloc",loc,Field.Store.YES));
-		    doc.add(new TextField("code",md_ci_rdr));
-		    
-		    lucene_writer.addDocument(doc);
-		    System.err.println("COCKER: done file " + fpath + ", " + loc);
-		}
-		else {
-		    System.err.println("COCKER: problem scanning file " + fpath);
-		    System.err.println("The Code Item Extracted is Not Valid.");
-		}
-	    }
-	    catch (Throwable t) {
-		System.err.println("COCKER: problem scanning file " + fpath);
-		t.printStackTrace();
-	    }
-	}
-    }
-}
-*/
 
     
 public void commitContext() throws IOException
@@ -462,7 +313,7 @@ public void commitContext() throws IOException
 public void removeFileFromIndex(ServerFile file) throws IOException
 {
    Term t = new Term("path",file.getPath());
-   System.err.println("COCKER: delete file " + file.getPath());
+   IvyLog.logD("SEARCH","Delete file " + file.getPath());
    lucene_writer.deleteDocuments(t);
 }
 

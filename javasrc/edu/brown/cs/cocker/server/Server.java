@@ -65,6 +65,7 @@ import org.w3c.dom.Element;
 
 import edu.brown.cs.cocker.analysis.AnalysisConstants;
 import edu.brown.cs.ivy.exec.IvyExecQuery;
+import edu.brown.cs.ivy.file.IvyLog;
 import edu.brown.cs.ivy.xml.IvyXml;
 import edu.brown.cs.ivy.xml.IvyXmlReader;
 import edu.brown.cs.ivy.xml.IvyXmlWriter;
@@ -179,8 +180,9 @@ private class ServerDispatchThread extends Thread {
    
       while (is_running) {
          try {
-            Socket clientSocket = server_socket.accept();
-            RequestHandler handler = retrieveRequestHandler(clientSocket);
+            Socket clientsocket = server_socket.accept();
+            IvyLog.logD("SERVER","Start client " + clientsocket.getLocalPort());
+            RequestHandler handler = retrieveRequestHandler(clientsocket);
             thread_pool.execute(handler);
           }
          catch (IOException ioe) {}
@@ -199,7 +201,7 @@ private class ServerDispatchThread extends Thread {
           }
        }
       catch (IOException e) {
-         System.err.println("COCKER: Firewall connection not running: " + e);
+         IvyLog.logI("SERVER","Firewall connection not running: " + e);
        }
     }
 
@@ -211,7 +213,7 @@ private class ServerDispatchThread extends Thread {
          else it.remove();
        }
       if (ct < web_clients) {
-         System.err.println("COCKER: Reconnect to firewall " + (web_clients - ct));
+         IvyLog.logI("SERVER","Reconnect to firewall " + (web_clients - ct));
          for (int i = ct; i < web_clients; ++i) {
             setupFirewallClient();
           }
@@ -245,6 +247,7 @@ protected void setWebClients(int ct)
 protected void setProperties(File propertiesfile)
 {
    property_file = propertiesfile;
+   IvyLog.logI("SERVER","Set property file " + propertiesfile);
    // server_properties = new Properties();
    // allow over writing properties from multiple sources
    try {
@@ -308,11 +311,22 @@ protected void setProperty(String key,String value)
    server_properties.setProperty(key,value);
    if (property_file != null) {
       try {
+         File f1 = property_file.getParentFile();
+         f1.mkdirs();
+         IvyLog.logD("SERVER","Save properties " + property_file);
 	 FileWriter fw = new FileWriter(property_file);
-	 server_properties.store(fw,"Cocker Server Properties");
+	 server_properties.store(fw,"Cocker Server Properties start");
 	 fw.close();
+         IvyLog.logD("SERVER","Save properties done: " +
+               property_file.exists() + " " + property_file.lastModified() + " " +
+               property_file.length());
+         fw = new FileWriter("/tmp/cocker.props");
+         server_properties.store(fw,"Cocker Server Properties");
+         fw.close();
        }
-      catch (IOException e) { }
+      catch (IOException e) { 
+          IvyLog.logE("SERVER","Problem saving properties",e);
+       }
     }
 }
 
@@ -342,9 +356,13 @@ public void start() throws IOException
    if (is_running) return;
    server_socket = new ServerSocket(host_port,10);
    if (host_port == 0) {
+      IvyLog.logD("SERVER","Listen to " + server_socket);
       host_port = server_socket.getLocalPort();
       setProperty("port",host_port);
-      setProperty("host",IvyExecQuery.getHostName());
+      String host = server_socket.getInetAddress().getHostName();
+      host = IvyExecQuery.getHostName();
+      setProperty("host",host);
+      IvyLog.logD("SERVER","Using " + host + " " + host_port);
     }
     
    setIsRunning(true);
@@ -403,7 +421,7 @@ private class RequestHandler extends Thread implements ServerConstants {
    private Element getRequest() throws IOException {
       String xml = xml_reader.readXml();
       if (xml == null) return null;
-      System.err.println("COCKER: REPLY: " + xml);
+      IvyLog.logD("SERVER","REQUEST: " + xml);
       return IvyXml.convertStringToXml(xml);
     }
 
@@ -422,6 +440,7 @@ private class RequestHandler extends Thread implements ServerConstants {
          try {
             for ( ; ; ) {
                request = getRequest(); // try to read
+               IvyLog.logD("SERVER","Recieved " + IvyXml.convertXmlToString(request));
                if (request == null || !IvyXml.isElement(request,"PING")) break;
                try (IvyXmlWriter xw = new IvyXmlWriter()) {
                   xw.begin("PONG");
@@ -433,11 +452,11 @@ private class RequestHandler extends Thread implements ServerConstants {
                   xw.end("PONG");
                   writeResponse(xw.toString());
                 }
-               System.err.println("COCKER: Handled PING");
+               IvyLog.logD("SERVER","Handled PING");
              }
           }
          catch (IOException ioe) {
-            System.err.println("COCKER: I/O error on request: " + ioe);
+            IvyLog.logE("SERVER","I/O error on request",ioe);
             break;
           }
          if (request == null) break;
@@ -475,7 +494,7 @@ private class RequestHandler extends Thread implements ServerConstants {
 	 client_socket.close();
        }
       catch (IOException ioe) {
-	 System.err.println("I/O error on close: " + ioe);
+	 IvyLog.logE("SERVER","I/O error on close",ioe);
        }
     }
 
