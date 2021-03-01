@@ -281,6 +281,7 @@ class Factory {
    public static File getIndexDirectory() {
       if (index_directory == null) {
          String idxnm = System.getProperty("COCKER_INDEX");
+         if (idxnm == null) idxnm = System.getenv("COCKER_INDEX");
          if (idxnm != null) {
             File f1 = new File(idxnm);
             if (f1.exists() && f1.isDirectory()) 
