@@ -117,9 +117,13 @@ interface PatternTokenizer {
 enum AnalysisType {
 
    //No underscores or hyphens for an ANALTYPE name!
+   //Classes AFG* are tokenizers used to produce tokens (based on AST) for indexing and search.
    KGRAM5CFG3(edu.brown.cs.cocker.analysis.AFG.class, 5,true),
    SSFIX(edu.brown.cs.cocker.analysis.AFGK5W.class, 5,true),
-   SSFIXFULL(edu.brown.cs.cocker.analysis.AFGK5W.class,5,true),
+   SSFIXFULL(edu.brown.cs.cocker.analysis.AFGK5W.class, 5,true),
+   SHARPFIXLOCAL(edu.brown.cs.cocker.analysis.AFGForSharpFixLocalSearch.class, 5,true),
+   STMTSEARCHLOCAL(edu.brown.cs.cocker.analysis.AFGK5W.class, 5, true),
+   STMTSEARCHGLOBAL(edu.brown.cs.cocker.analysis.AFGK5W.class, 5, true),
    KGRAM5WORDCFG3(edu.brown.cs.cocker.analysis.AFGK5W.class, 5,true),
    KGRAM5WORDCFG5(edu.brown.cs.cocker.analysis.AFGK5W.class, 5,true),
    KGRAM5WORDCFG7(edu.brown.cs.cocker.analysis.AFGK5W.class, 5,true),
@@ -222,11 +226,11 @@ enum AnalysisType {
 
 
    /* For indexing.
-      (Trees are RESOLVED if the third argument is passed as TRUE
-      for analysis method as a enum type.)
-
-      This is called by AnalysisJavaTokenizer.java to get a list of nodes, then
-      the tokenizer scanns the node list to return a list of pattern tokens. */
+      In SearchContext.java, files are scanned, and code fragments to be indexed are generated.
+      The list of AST nodes corresponding to the code fragments are saved as field in rdr.
+      AnalysisJavaTokenizer calls this method to get a list of nodes.
+      Later, the tokenizer (instance of class AFG*) scans these nodes to produce tokens to index.
+   */
    public List<ASTNode> parseIntoASTNodes(Reader rdr) throws IOException  {
       if (rdr instanceof AnalysisCodeReader) {
 	  AnalysisCodeReader code_rdr = (AnalysisCodeReader) rdr;
@@ -237,9 +241,9 @@ enum AnalysisType {
       }
     }
 
-   /* For query.
-      (See the codequery method from CockerServer.java.)
-      (Trees are RESOLVED!) */
+   /* For query. 
+      Obtain the AST nodes from file content.
+      See method codequery in CockerServer.java, which handles query. */
    public List<ASTNode> parseIntoASTNodes(String cnts, ChunkType type) {
       if (our_parser == null) our_parser = new AnalysisParser();
       ASTNode parse_node = our_parser.parseIntoASTNode(cnts,type);

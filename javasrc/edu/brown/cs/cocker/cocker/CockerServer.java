@@ -474,7 +474,7 @@ private class CockerHandleRequestCallback extends ServerRequestCallback {
       CockerServer cs = (CockerServer) s;
       AnalysisType anal = AnalysisConstants.Factory.getAnalysisType();
       String anal_str = anal.toString(); //E.g., KGRAM5WORDMD
-      PatternTokenizer tokenizer = anal.createTokenizer();
+      PatternTokenizer tokenizer = anal.createTokenizer(); //E.g., AFGK5W
       if (data != null) type = ChunkType.FILE;
 
       //"code" is supposed to be the content of a Java class,
@@ -482,7 +482,7 @@ private class CockerHandleRequestCallback extends ServerRequestCallback {
       //the parsed CompilationUnit which corresponds to "code"
       List<ASTNode> node_list = anal.parseIntoASTNodes(code,type);
       ASTNode root = node_list.get(0);
-      List<PatternToken> toks = tokenizer.getTokens(root,data);
+      List<PatternToken> toks = tokenizer.getTokens(root,data); //First find the target node and then obtain the query tokens
       IvyLog.logI("COCKER","QUERY TOKENS:");
       for (PatternToken tok : toks) {
 	 IvyLog.logI1("COCKER",tok.getText());

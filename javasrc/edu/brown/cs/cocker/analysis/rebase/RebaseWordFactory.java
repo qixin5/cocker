@@ -47,10 +47,13 @@ public RebaseWordFactory()
 {}
 
 
+public static List<String> getCandidateWords(RebaseWordStemmer stm,String text,int off,int len) {
+    return getCandidateWords(stm,text,off,len,true,true);
+}
 
-public static List<String> getCandidateWords(RebaseWordStemmer stm,String text,int off,int len)
-{
-   if (len < 3 || len > 32) return null;
+public static List<String> getCandidateWords(RebaseWordStemmer stm,String text,int off,int len,boolean filter_stopwords,boolean filter_short_long_words) {
+
+   if (filter_short_long_words && (len < 3 || len > 32)) return null;
 
    int [] breaks = new int[32];
    int breakct = 0;
@@ -83,30 +86,35 @@ public static List<String> getCandidateWords(RebaseWordStemmer stm,String text,i
    List<String> rslt = new ArrayList<String>();
 
    // first use whole word
-   addCandidateWords(stm,text,off,len,rslt);
+   addCandidateWords(stm,text,off,len,rslt,filter_stopwords,filter_short_long_words);
 
    if (breakct > 0) {
       int lbrk = 0;
       for (int i = 0; i < breakct; ++i) {
-	 if (breaks[i] - lbrk >= 3) {
-	    addCandidateWords(stm,text,off+lbrk,breaks[i]-lbrk,rslt);
-	  }
-	 lbrk = breaks[i];
-       }
-      addCandidateWords(stm,text,off+lbrk,len-lbrk,rslt);
+	if (filter_short_long_words) {
+	    if (breaks[i] - lbrk >= 3) {
+		addCandidateWords(stm,text,off+lbrk,breaks[i]-lbrk,rslt,filter_stopwords,filter_short_long_words);
+	    }
+	}
+	else {
+	    addCandidateWords(stm,text,off+lbrk,breaks[i]-lbrk,rslt,filter_stopwords,filter_short_long_words);
+	}
+	lbrk = breaks[i];
+      }
+      addCandidateWords(stm,text,off+lbrk,len-lbrk,rslt,filter_stopwords,filter_short_long_words);
     }
 
    return rslt;
 }
 
 
-private static void addCandidateWords(RebaseWordStemmer stm,String text,int off,int len,List<String> rslt)
+private static void addCandidateWords(RebaseWordStemmer stm,String text,int off,int len,List<String> rslt,boolean filter_stopwords,boolean filter_short_long_words)
 {
-   if (len < 3) return;
+   if (filter_short_long_words && (len < 3)) return;
 
    String wd1 = text.substring(off,off+len);
    String wd0 = wd1.toLowerCase();
-   addCandidateWord(wd0,rslt);
+   addCandidateWord(wd0,rslt,filter_stopwords,filter_short_long_words);
 
    String wd = wd0;
    if (word_options.contains(WordOptions.STEM)) {
@@ -116,7 +124,7 @@ private static void addCandidateWords(RebaseWordStemmer stm,String text,int off,
       wd = stm.stem();	  // stem and convert to lower case
       if (dictionary_words.contains(wd) && !wd0.equals(wd)) {
 	 // System.err.println("STEM " + wd0 + " => " + wd);
-	 addCandidateWord(wd,rslt);
+	 addCandidateWord(wd,rslt,filter_stopwords,filter_short_long_words);
        }
     }
 
@@ -129,8 +137,8 @@ private static void addCandidateWords(RebaseWordStemmer stm,String text,int off,
 	    if (dictionary_words.contains(s1) || short_words.containsKey(s1)) {
 	       if (dictionary_words.contains(s2) || short_words.containsKey(s2)) {
 		  if (!s1.equals(wd)) {
-		     addCandidateWord(s1,rslt);
-		     addCandidateWord(s2,rslt);
+		     addCandidateWord(s1,rslt,filter_stopwords,filter_short_long_words);
+		     addCandidateWord(s2,rslt,filter_stopwords,filter_short_long_words);
 		   }
 		}
 	     }
@@ -143,10 +151,10 @@ private static void addCandidateWords(RebaseWordStemmer stm,String text,int off,
 
 
 
-private static void addCandidateWord(String wd,List<String> rslt)
+private static void addCandidateWord(String wd,List<String> rslt,boolean filter_stopwords,boolean filter_short_long_words)
 {
-   if (stop_words.contains(wd)) return;
-   if (wd.length() < 3 || wd.length() > 24) return;
+   if (filter_stopwords && stop_words.contains(wd)) return;
+   if (filter_short_long_words && (wd.length() < 3 || wd.length() > 24)) return;
 
    rslt.add(wd);
 

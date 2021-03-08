@@ -101,10 +101,15 @@ public void reset() throws IOException
    token_list = null;
    token_index = 0;
 
-   //Indexing
+   //====================
+   //Code below does the following for indexing:
+   //1. Obtain the analysis type.
+   //2. Obtain the list of AST nodes (corresponding to the code fragment to index) from the code reader. See SearchContext.java (methods add*ToIndex) for how to get the AST nodes. Method parseIntoASTNodes is defined in AnalysisConstants.java.
+   //3. Use the tokenizer associated with the analysis type to obtain the index tokens. Note the getTokens method is actually defined in AFG.java (and its descendents).
+   //====================
    try {
-      AnalysisType anal_type = Factory.getAnalysisType();
-      List<ASTNode> node_list = anal_type.parseIntoASTNodes(input); //input is a field (of type Reader) of Lucene's Tokenizer
+      AnalysisType anal_type = Factory.getAnalysisType(); //E.g., KGRAM3WORDMD.
+      List<ASTNode> node_list = anal_type.parseIntoASTNodes(input); //input is a field of Lucene's Tokenizer. Its type is Reader.
       token_list = our_tokenizer.getTokens(node_list);
     }
    catch (IOException e) { }

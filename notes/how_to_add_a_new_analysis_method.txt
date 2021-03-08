@@ -1,0 +1,15 @@
+Basically you need to do two things:
+1. Define its index component.
+2. Define its tokenizer.
+
+You need to do 1 to define the code unit to index. A code unit can be a method, a statement, a sequence of statements, or something else, and you need to define it. You need to do 2 to define the approach to produce tokens for code. These tokens are used for indexing and for search. An an example, a token can be a k-gram, in which case you consider comparing sequence of tokens for search.
+
+To make this happen, first create an entry for the analysis method in enum AnalysisType in AnalysisConstants.java. To do this, you need to define a tokenizer (a class that extends AFG.java), which obtains index/search tokens from AST nodes. See classes AFG*.java for how to create a valid tokenizer. By putting an entry, you define that the tokenizer be associated with the analysist type. The method createTokenizer can return this tokenizer, which can be further used to obtain tokens from code.
+
+After creating an entry in AnalysisType and defining its tokenizer, refer to SearchContext.java, which handles the indexing process. In particular, addFileToIndex is the core method for indexing. Based on the analysis type, it calls either addMethodToIndex or addCodeFragmentToIndex with the right index component generator. The generator produces, given a method, a list of index component -- the basic code unit to index. You need to define an index component generator that extends IndexComponentGenerator (see SSFIXIndexComponentGenerator or StmtIndexComponentGenerator for example).
+
+In add*ToIndex, for each index component, an AnalysisCodeReader is created which stores as field the code (as a list of AST nodes) to index. Later, somehow the method reset in AnalysisJavaTokenizer (from analysis/src) consumes the reader to obtain the AST nodes (via parseIntoASTNodes), and further calls the tokenizer (associated with the analysis type) to produce tokens. These tokens are actually the ones to index.
+
+Finally, method codequery in CockerServer.java (from javasrc/edu/brown/cs/cocker/cocker) handles the query. It identifies the analysis type and gets its associated tokenizer. Given the query located, it invokes the tokenizer to obtain tokens. These tokens are actually the ones used for search and compared with indexed tokens.
+
+

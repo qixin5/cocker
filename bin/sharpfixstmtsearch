@@ -1,0 +1,15 @@
+#!/bin/bash
+
+query_file=$1
+query_loc=$2
+local_rslt_file=$3
+global_rslt_file=$4
+
+if [ -z ${query_file} ] || [ -z ${query_loc} ] || [ -z ${local_rslt_file} ] || [ -z ${global_rslt_file} ]; then
+   echo "Missing parameters."
+   exit 1
+fi 
+
+./cockerq -a sharpfixlocal -data "${query_loc}" ${query_file} > ${local_rslt_file}
+
+./sharpfixstmtsearchglobal ${query_file} "${query_loc}" > ${global_rslt_file}

@@ -1,0 +1,5 @@
+1. Start the service
+   sudo service postgresql start
+
+2. Stop the service
+   sudo service postgresql stop

@@ -1,0 +1,25 @@
+1. Create databases
+   1.1 Go to bin
+   1.2 `./cockerdb -a STMTSEARCHLOCAL new`
+   1.3 `./cockerdb -a STMTSEARCHGLOBAL new`
+
+2. Index
+   2.1 Go to bin
+   2.2 `./cockercmd -a STMTSEARCHLOCAL start -m <CODE_DIR_PATH_TO_LOCAL_PROJECT> -M 16000`
+   2.3 When it finishes, `./cockercmd -a STMTSEARCHLOCAL stop`
+   2.4 `./cockercmd -a STMTSEARCHGLOBAL start -m <CODE_DIR_PATH_TO_NON-LOCAL_PROJECTS> -M 16000`
+   2.5 When it finishes, `./cockercmd -a STMTSEARCHGLOBAL stop`
+
+3. Search
+   3.1 Go to bin
+
+   3.2 Make sure cocker-STMTSEARCHLOCAL and cocker-STMTSEARCHGLOBAL are on. Otherwise,
+       3.2.1 Start the local engine by `./cockercmd -a STMTSEARCHLOCAL start -M 16000`
+       3.2.2 Start the global engine by `./cockercmd -a STMTSEARCHGLOBAL start -M 16000`
+
+   3.3 Code search by `./stmtsearch <QUERY_FILE> <QUERY_LOC> <LOCAL_RESULT> <GLOBAL_RESULT>`
+       <QUERY_FILE> is the code file
+       <QUERY_LOC> is string used to locate the query statement
+       <LOCAL_RESULT> is file used to save local search result
+       <GLOBAL_RESULT> is file used to save global search result
+

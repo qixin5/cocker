@@ -83,6 +83,7 @@ public final static Set<String> md_item_anal_types;
 
 private GeneralIndexComponentGenerator general_icgen;
 private SSFIXIndexComponentGenerator ssfix_icgen;
+private StmtIndexComponentGenerator stmt_icgen;
     //private CodeItemExtractor cie;
     
 
@@ -93,10 +94,17 @@ private SSFIXIndexComponentGenerator ssfix_icgen;
 /********************************************************************************/
 
 static {
-    cfg_anal_types = new HashSet<String>(); //to be added
+
+    //====================
+    //cfg_*_types indexes code fragments within a method
+    //====================    
+    cfg_anal_types = new HashSet<String>();
     cfg_anal_types.add("KGRAM5CFG3");
     cfg_anal_types.add("SSFIX");
     cfg_anal_types.add("SSFIXFULL");
+    cfg_anal_types.add("SHARPFIXLOCAL");
+    cfg_anal_types.add("STMTSEARCHLOCAL");
+    cfg_anal_types.add("STMTSEARCHGLOBAL");
     cfg_anal_types.add("KGRAM5WORDCFG3");
     cfg_anal_types.add("KGRAM5WORDCFG5");
     cfg_anal_types.add("KGRAM5WORDCFG7");
@@ -106,13 +114,17 @@ static {
 
     cfg_item_anal_types = new HashSet<String>(); //to be added
     cfg_item_anal_types.add("ITEM0CFG5ONEFIELD");
-    
-    md_anal_types = new HashSet<String>(); //to be added
-    md_anal_types.add("KGRAM3WORDMD");    
+
+
+    //====================
+    //md_*_types indexes method bodies
+    //====================    
+    md_anal_types = new HashSet<String>();
+    md_anal_types.add("KGRAM3WORDMD");     //This is also SHARPFIXGLOBAL
     md_anal_types.add("KGRAM5WORDMD");
     md_anal_types.add("KGRAM7WORDMD");
 
-    md_item_anal_types = new HashSet<String>(); //to be added
+    md_item_anal_types = new HashSet<String>();
     md_item_anal_types.add("ITEM0MDONEFIELD");
 }
     
@@ -122,6 +134,7 @@ public SearchContext(IndexWriter writer)
    anal_type = AnalysisConstants.Factory.getAnalysisType();
    general_icgen = new GeneralIndexComponentGenerator();
    ssfix_icgen = new SSFIXIndexComponentGenerator();
+   stmt_icgen = new StmtIndexComponentGenerator();
    //cie = new CodeItemExtractor();
 }
 
@@ -151,8 +164,9 @@ public void addFileToIndex(ServerFile file) throws IOException
     //List<MethodDeclaration> md_list = ASTUtils.getMethodDeclarations(cu);
     List<MethodDeclaration> md_list = MethodDeclarationGetter.getMethodDeclarations(cu);
 
-    if (md_anal_types.contains(anal_type_str) ||
-	md_item_anal_types.contains(anal_type_str)) {
+
+    //Index code based on analysis types
+    if (md_anal_types.contains(anal_type_str) || md_item_anal_types.contains(anal_type_str)) {
 	if (anal_type_str.startsWith("SSFIX")) {
 	    addMethodToIndex(cu, md_list, file, ssfix_icgen);
 	}
@@ -160,10 +174,15 @@ public void addFileToIndex(ServerFile file) throws IOException
 	    addMethodToIndex(cu, md_list, file, general_icgen);
 	}
     }
-    else if (cfg_anal_types.contains(anal_type_str) ||
-	     cfg_item_anal_types.contains(anal_type_str)) {
+    else if (cfg_anal_types.contains(anal_type_str) || cfg_item_anal_types.contains(anal_type_str)) {
 	if (anal_type_str.startsWith("SSFIX")) {
 	    addCodeFragmentToIndex(cu, md_list, file, ssfix_icgen, 3);
+	}
+	else if (anal_type_str.startsWith("SHARPFIXLOCAL")) {
+	    addCodeFragmentToIndex(cu, md_list, file, stmt_icgen, -1); //Code fragment as statement
+	}
+	else if (anal_type_str.startsWith("STMTSEARCH")) {
+	    addCodeFragmentToIndex(cu, md_list, file, stmt_icgen, -1); //Code fragment as statement
 	}
 	else {
 	    if (anal_type_str.contains("CFG1")) {
@@ -190,8 +209,9 @@ public void addFileToIndex(ServerFile file) throws IOException
 	}
     }
 }
-    
-/* No comments are indexed. */
+
+
+/* This method indexes the entire method body. */
 private void addMethodToIndex(CompilationUnit cu, List<MethodDeclaration> md_list, ServerFile file, IndexComponentGenerator icgen) throws IOException
 {
     String fpath = file.getPath();
@@ -232,20 +252,28 @@ private void addMethodToIndex(CompilationUnit cu, List<MethodDeclaration> md_lis
 }
 
 
-/* No comments are indexed. */
+/* This method indexes the code fragments extracted from a method body.
+   The index component generator icgen obtains such code fragments.
+   Different analysis methods use different icgens.
+   As an example, STMTSEARCHLOCAL uses its icgen to obtain single statements,
+   and each single statement is wrapped as an index component. 
+*/
+
 private void addCodeFragmentToIndex(CompilationUnit cu, List<MethodDeclaration> md_list, ServerFile file, IndexComponentGenerator icgen, int index_k) throws IOException
 {
     String fpath = file.getPath();
     for (MethodDeclaration md : md_list) {
-	//Get the src-locations for all the components to be indexed
+	//Get the code fragments (each wrapped as an index component) to index
 	List<IndexComponent> ic_list = icgen.getIndexComponentsForMD(md, index_k);
 	for (IndexComponent ic : ic_list) {
+
+	    //Get the src-location of the code fragment (used to locate its AST nodes)
 	    List<ASTNode> ic_node_list = ic.getNodeList();
-	    String slc_loc = "";
+	    String slc_loc = ""; //Start of the code fragment
 	    int ic_node_list_size = ic_node_list.size();
 	    int ex_start_pos = -1;
 	    int ex_end_pos = -1;
-	    //Get the location string, extended start position and extended length for this component
+
 	    for (int i=0; i<ic_node_list_size; i++) {
 		ASTNode ic_node = ic_node_list.get(i);
 		int ic_node_start_pos = ic_node.getStartPosition();
@@ -267,8 +295,10 @@ private void addCodeFragmentToIndex(CompilationUnit cu, List<MethodDeclaration> 
 		continue;
 	    }
 	    
-	    //Create a component file-reader
-	    //Note here a newly created Reader from file.getReader() is used
+	    //Create a reader object.
+	    //It saves the code fragment's location, start and end positions, and AST nodes.
+	    //The reader object will be further accessed by ??? to get the code,
+	    //and extract the tokens from it.
 	    try {
 		AnalysisCodeReader md_code_rdr = new AnalysisCodeReader(file.getReader());
 		md_code_rdr.setLocString(slc_loc);
