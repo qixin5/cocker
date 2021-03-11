@@ -19,7 +19,7 @@ fi
 CP1=$COCKER_HOME/java
 CP1=${CP1}:$COCKER_HOME/lib/ivy.jar
 CP1=${CP1}:$COCKER_HOME/lib/postgresql.jar
-CP1=${CP1}:$COCKER_HOME/lib/asm6.jar
+CP1=${CP1}:$COCKER_HOME/lib/asm9.jar
 
 
 for f in $COCKER_HOME/lib/*

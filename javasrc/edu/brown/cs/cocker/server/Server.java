@@ -320,9 +320,6 @@ protected void setProperty(String key,String value)
          IvyLog.logD("SERVER","Save properties done: " +
                property_file.exists() + " " + property_file.lastModified() + " " +
                property_file.length());
-         fw = new FileWriter("/tmp/cocker.props");
-         server_properties.store(fw,"Cocker Server Properties");
-         fw.close();
        }
       catch (IOException e) { 
           IvyLog.logE("SERVER","Problem saving properties",e);

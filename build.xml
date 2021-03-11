@@ -28,7 +28,7 @@
    <path id='cocker.classpath'>
       <pathelement location='java' />
       <pathelement location='lib/ivy.jar' />
-      <pathelement location='lib/asm6.jar'/>
+      <pathelement location='lib/asm.jar'/>
       <pathelement location='lib/postgresql.jar' />
       <pathelement location='lib/commons-io-2.4.jar'/>
       <fileset dir='lib/eclipsejar' includes='*.jar' />

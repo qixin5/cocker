@@ -60,8 +60,8 @@ long UPDATE_DELAY = 1000L*10;
 
 
 
-
-String PROPERTY_FILE_NAME = "cocker.props"; 
+String DEFAULT_PROPERTY_FILE_NAME = "cocker.props";
+String PROPERTY_FILE_NAME = "cocker.$.props"; 
 
 
 

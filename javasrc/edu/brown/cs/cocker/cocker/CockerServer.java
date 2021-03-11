@@ -150,8 +150,7 @@ public static void main(String[] args)
     }
 
    if (log) {
-      File idx = AnalysisConstants.Factory.getAnalysisType().getIndexPath();
-      File f = new File(idx.getPath() + ".log");
+      File f = AnalysisConstants.Factory.getAnalysisType().getLogFile();
       f.delete();
       IvyLog.setupLogging("COCKER",false);
       IvyLog.setLogFile(f);
@@ -197,15 +196,15 @@ private CockerServer(File datapath,int port,int threadPoolSize)
 
       ResourceFinder rf;
       if (datapath != null) {
-	 File pfile = new File(datapath,PROPERTY_FILE_NAME);
+	 File pfile = new File(datapath,DEFAULT_PROPERTY_FILE_NAME);
 	 setProperties(pfile);
-	 String tnm = AnalysisConstants.Factory.getAnalysisType().toString().toLowerCase();
-	 File pfile1 = new File(datapath,PROPERTY_FILE_NAME + "." + tnm);
+         String pnm = AnalysisConstants.Factory.getAnalysisType().getPropertyFile();
+	 File pfile1 = new File(datapath,pnm);
 	 setProperties(pfile1);
        }
       else {
 	 rf = new ResourceFinder("COCKER_HOME");
-	 InputStream ins = rf.getInputStream(PROPERTY_FILE_NAME);
+	 InputStream ins = rf.getInputStream(DEFAULT_PROPERTY_FILE_NAME);
 	 setProperties(ins);
        }
 

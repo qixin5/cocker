@@ -56,6 +56,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.io.*;
 
+import edu.brown.cs.cocker.cocker.CockerConstants;
 import edu.brown.cs.cocker.util.ResourceFinder;
 import edu.brown.cs.ivy.file.IvyFile;
 
@@ -256,7 +257,19 @@ enum AnalysisType {
       if (our_parser == null) our_parser = new AnalysisParser();
       return our_parser.parseIntoASTNodes(cnts,loc,type);
     }
-
+   
+   public String getPropertyFile() {
+      String pn = CockerConstants.PROPERTY_FILE_NAME; 
+      pn = pn.replace("$",toString().toLowerCase());
+      return pn;
+    }
+   
+   public File getLogFile() {
+      String pn = "cocker-" + toString().toLowerCase() + ".log";
+      File dir = Factory.getIndexDirectory(); 
+      return new File(dir,pn);
+    }
+   
 }	// end of inner enum AnalysisType
 
 
