@@ -162,14 +162,14 @@ enum AnalysisType {
 
    public PatternTokenizer createTokenizer() {
       try {
-	 if (pattern_arg != null) {
-	    Constructor<? extends PatternTokenizer> cnst = pattern_class.getConstructor(Object.class);
-	    return cnst.newInstance(pattern_arg);
-	  }
+         if (pattern_arg != null) {
+            Constructor<? extends PatternTokenizer> cnst = pattern_class.getConstructor(Object.class);
+            return cnst.newInstance(pattern_arg);
+          }
        }
       catch (Throwable t) { }
       try {
-	 return pattern_class.getConstructor().newInstance();
+         return pattern_class.getConstructor().newInstance();
    //	 return pattern_class.newInstance();
        }
       catch (Throwable t) { t.printStackTrace(); }

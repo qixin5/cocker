@@ -487,11 +487,11 @@ private class RequestHandler extends Thread implements ServerConstants {
 
    protected void shutdown() {
       try {
-	 session_open = false;
-	 client_socket.close();
+         session_open = false;
+         client_socket.close();
        }
       catch (IOException ioe) {
-	 IvyLog.logE("SERVER","I/O error on close",ioe);
+         IvyLog.logE("SERVER","I/O error on close",ioe);
        }
     }
 
