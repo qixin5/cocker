@@ -364,14 +364,19 @@ public void rollbackContext() throws IOException
 
 public void updateFileInIndex(ServerFile file) throws IOException
 {
-   Reader fr = file.getReader();
-   Document doc = new Document();
-   Field pathfield = new StringField("path",file.getPath(),Field.Store.YES);
-   doc.add(pathfield);
-   doc.add(new LongField("modified",file.lastModified(),Field.Store.NO));
-   doc.add(new TextField("code",fr));
+   // This code did the whole file -- not correct if we are adding fragments
+// Reader fr = file.getReader();
+// Document doc = new Document();
+// Field pathfield = new StringField("path",file.getPath(),Field.Store.YES);
+// doc.add(pathfield);
+// doc.add(new LongField("modified",file.lastModified(),Field.Store.NO));
+// doc.add(new TextField("code",fr));
+// lucene_writer.updateDocument(new Term("path",file.getPath()),doc);
    
-   lucene_writer.updateDocument(new Term("path",file.getPath()),doc);
+   // remove all fragments from this file
+   // and then find all fragments and add to the index
+   lucene_writer.deleteDocuments(new Term("path",file.getPath()));
+   addFileToIndex(file);
 }
 
 

@@ -44,11 +44,14 @@
 package edu.brown.cs.cocker.application;
 
 import java.io.File;
+import java.io.FileReader;
 import java.io.IOException;
+import java.io.Reader;
 import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Properties;
 
 import org.w3c.dom.Element;
 
@@ -276,6 +279,26 @@ private void scanArgs(String [] args)
 	 System.err.println("COMMAND: " + xw.toString());
 	 message_queue.add(xw.toString());
 	 xw.close();
+       }
+    }
+   
+   if (datapath != null && connection_info.getPort() == 0) {
+      AnalysisType anal = AnalysisConstants.Factory.getAnalysisType();
+      File f = new File(datapath,anal.getPropertyFile());
+      if (f.exists()) {
+         Properties p = new Properties();
+         try (Reader ir = new FileReader(f)) {
+            p.load(ir);
+          }
+         catch (IOException e) { }
+         String ports = p.getProperty("port");
+         if (ports != null) {
+            try {
+               int port = Integer.parseInt(ports);
+               connection_info.setPort(port);
+             }
+            catch (NumberFormatException e) { }
+          }
        }
     }
    

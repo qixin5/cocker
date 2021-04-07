@@ -49,6 +49,7 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Properties;
 
 import org.w3c.dom.Element;
 
@@ -203,6 +204,26 @@ private void scanArgs(String [] args)
        }
       else badArgs();
     }
+   
+   if (datapath != null && connection_info.getPort() == 0) {
+      AnalysisType anal = AnalysisConstants.Factory.getAnalysisType();
+      File f = new File(datapath,anal.getPropertyFile());
+      if (f.exists()) {
+         Properties p = new Properties();
+         try (Reader ir = new FileReader(f)) {
+            p.load(ir);
+          }
+         catch (IOException e) { }
+         String ports = p.getProperty("port");
+         if (ports != null) {
+            try {
+               int port = Integer.parseInt(ports);
+               connection_info.setPort(port);
+             }
+            catch (NumberFormatException e) { }
+          }
+       }
+    }
 }
 
 
@@ -266,7 +287,8 @@ private List<SearchResult> queryServer(int max,String text)
    String msg = xw.toString();
    xw.close();
    try {
-      ServerSession sess = new ServerSession(connection_info); Element resp = sess.sendRequest(msg);
+      ServerSession sess = new ServerSession(connection_info); 
+      Element resp = sess.sendRequest(msg);
       List<SearchResult> results = new ArrayList<SearchResult>();
       for (Element relt : IvyXml.children(resp,"FILE")) {
 	 SearchResult r = new SearchResult(IvyXml.getText(relt),
