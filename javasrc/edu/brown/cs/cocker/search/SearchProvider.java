@@ -214,8 +214,11 @@ public List<SearchResult> search(Query query,int max)
       for (ScoreDoc hit : hits) {
 	 Document hitdoc = searcher.doc(hit.doc);
 	 //hitdoc.get("mloc") can be NULL
+         IvyLog.logD("SEARCH","Result: " + hitdoc.get("path") + "@" + hitdoc.get("mloc") +
+               "=" + hit.score);
 	 result.add(new SearchResult(hitdoc.get("path"),hitdoc.get("mloc"),hit.score));
        }
+      IvyLog.logI("SEARCH","Found " + hits.length + " results");
     }
    catch (IOException e) {
       IvyLog.logE("SEARCH","Search problem: " + e,e);
