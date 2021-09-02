@@ -111,6 +111,7 @@ public static List<String> getCandidateWords(RebaseWordStemmer stm,String text,i
 private static void addCandidateWords(RebaseWordStemmer stm,String text,int off,int len,List<String> rslt,boolean filter_stopwords,boolean filter_short_long_words)
 {
    if (filter_short_long_words && (len < 3)) return;
+   if (len == 0) return;
 
    String wd1 = text.substring(off,off+len);
    String wd0 = wd1.toLowerCase();
@@ -121,7 +122,13 @@ private static void addCandidateWords(RebaseWordStemmer stm,String text,int off,
       for (int i = 0; i < len; ++i) {
 	 stm.add(text.charAt(off+i));
        }
-      wd = stm.stem();	  // stem and convert to lower case
+      try {
+         wd = stm.stem();	  // stem 
+       }
+      catch (Throwable t) {
+         // problem stemming
+         wd = text.substring(off,off+len);
+       }
       if (dictionary_words.contains(wd) && !wd0.equals(wd)) {
 	 // System.err.println("STEM " + wd0 + " => " + wd);
 	 addCandidateWord(wd,rslt,filter_stopwords,filter_short_long_words);

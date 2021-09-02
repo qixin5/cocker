@@ -110,7 +110,7 @@ public Server(int port,int threadpoolsize,ServerRequestCallback requestcallback)
    request_callback = requestcallback;
    operations_manager = new ServerOperationsManager(this);
    server_properties = new Properties();
-   web_clients = DEFAULT_NUM_WEB_CLIENTS;
+   web_clients = 0;
 }
 
 

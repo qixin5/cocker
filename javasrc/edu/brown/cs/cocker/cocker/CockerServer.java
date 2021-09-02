@@ -108,6 +108,7 @@ public static void main(String[] args)
    boolean log = true;
    File datapath = null;
    IvyLog.LogLevel loglevel = IvyLog.LogLevel.DEBUG;
+   int wc = -1;
 
    for (int i = 0; i < args.length; ++i) {
       if (args[i].startsWith("-")) {
@@ -143,6 +144,14 @@ public static void main(String[] args)
 	       badArgs();
 	     }
 	  }
+         else if (args[i].startsWith("-w") && i+1 < args.length) {      // -web #clients
+            try {
+               wc = Integer.parseInt(args[++i]);
+             }
+            catch (NumberFormatException e) {
+               badArgs();
+             }
+          }
 	 else badArgs();
        }
       else badArgs();
@@ -165,6 +174,7 @@ public static void main(String[] args)
    IvyLog.logI("COCKER","Ready to start " + datapath + " " + port + " " + tpsize);
 
    CockerServer cs = new CockerServer(datapath,port,tpsize);
+   if (wc > 0) cs.setWebClients(wc);
 
    try {
       cs.start();
