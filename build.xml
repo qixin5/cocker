@@ -36,6 +36,8 @@
       <fileset dir='lib' includes='commons-el*jar' />
       <fileset dir='lib' includes='jtar*.jar' />
       <fileset dir='lib' includes='lucene*.jar' />
+      <fileset dir='lib' includes='lucene*.jar' />
+      <fileset dir='lib' includes='junit.jar' />
    </path>
 
    <target name='clean'>
