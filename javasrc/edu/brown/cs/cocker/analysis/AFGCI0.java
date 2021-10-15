@@ -12,14 +12,14 @@ public class AFGCI0 extends AFG
     private CodeItemExtractor cie;
     
     public AFGCI0(Object k0) {
-	super(k0);
-	cie = new CodeItemExtractor();
+        super(k0);
+        cie = new CodeItemExtractor();
     }
 
     @Override public List<PatternToken> getTokens(ASTNode node) {
-	List<ASTNode> node_list = new ArrayList<ASTNode>();
-	node_list.add(node);
-	return getTokensHelper(node_list);
+        List<ASTNode> node_list = new ArrayList<ASTNode>();
+        node_list.add(node);
+        return getTokensHelper(node_list);
     }
 
     /* For indexing, node_list is passed from the Reader object. See AnalysisJavaTokenizer.java. */

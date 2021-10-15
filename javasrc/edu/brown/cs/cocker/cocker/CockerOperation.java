@@ -182,7 +182,7 @@ public static class Unmonitor extends CockerOperation {
 
    Unmonitor(List<String> files) {
       super("UnmonitorFiles");
-      if (files != null) file_names = new ArrayList<String>(file_names);
+      if (files != null) file_names = new ArrayList<String>(files);
       else file_names = null;
     }
 
