@@ -541,7 +541,7 @@ private void update(String tbl,boolean add,File f)
       q = "DELETE FROM " + tbl;
     }
    else {
-      q = "DELETE FROM " + tbl + " WHERE file = '" + f.getPath() + "' )";
+      q = "DELETE FROM " + tbl + " WHERE file = '" + f.getPath() + "'";
     }
 
    try {
