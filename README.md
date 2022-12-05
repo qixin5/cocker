@@ -16,9 +16,9 @@ If you use Cocker, please cite our paper:
 
 ## Installation and usage
 
-0. Prerequisite: Linux. JDK 10. Ant. PostgreSQL.
+0. Prerequisite: **Linux**, **JDK 10**, **Ant**, and **PostgreSQL 12**.
 
-If you haven't installed PostgreSQL, refer to https://www.postgresql.org/download.
+If you haven't installed PostgreSQL, refer to https://www.postgresql.org/download. After installation, start the server.
 
 
 1. Make sure you have a role (user) named postgres and you have a password for it.
@@ -38,7 +38,7 @@ java -cp ivy.jar edu.brown.cs.ivy.exec.IvySetup -local
 cd ..
 ```
 
-After this, you should have access to a file named ~/.ivy/Props. The content of this file should be something like:
+After this, you should have access to a file named `~/.ivy/Props`. The content of this file should be something like:
 
 ```
 <?xml version="1.0" encoding="UTF-8"?>
@@ -50,32 +50,27 @@ After this, you should have access to a file named ~/.ivy/Props. The content of 
 </properties>
 ```
 
-NOTE: You may see error message including " java.net.UnknownHostException: valerie". This is fine.
+NOTE: You may see error message including "java.net.UnknownHostException: valerie". This is fine.
 
 
 3. Update PostgreSQL's property file.
 
-Copy Database.props.template to ~/.ivy/Cocker.Database.props.
-In Cocker.Database.props replace dbmspassword with your own password.
+Copy `Database.props.template` to `~/.ivy/Cocker.Database.props`.
+In `Cocker.Database.props` replace dbmspassword with your own password.
 
 
 4. Set COCKER_HOME.
 
-Add `export COCKER_HOME=XXX/cocker` (XXX is the parent directory of cocker) in the end of ~/.profile. Then run `source ~/.profile`.
-This should no longer be necessary, but can help.
-
+In the end of the file `~/.profile`, add `export COCKER_HOME=XXX/cocker`, where `XXX` is the parent directory of cocker. Then run `source ~/.profile`.
 
 
 5. Use your own index path.
 
-```
-Make sure you have an empty directory named XXX to save index files.
-Add 'export COCKER_INDEX=XXX' in .profile and source it. (or do equivalent for other shells).
-Alternatively, create a link 'index' in either COCKER_HOME or your home directory to the index directory.
-Alternatively, create a properies file ~/.cockerrc with key index and value XXX
-All these should use absolute paths.
-
-```
+ - Make sure you have an empty directory named `XXX` to save index files.
+ - Add `export COCKER_INDEX=XXX` in `~/.profile` and source it (or do what's equivalent for other shells).
+   - Alternatively, create a link `index` in either `COCKER_HOME` or your home directory to the index directory.
+   - Alternatively, create a properies file `~/.cockerrc` with key `index` and value `XXX`.
+ * NOTE: Use absolute paths.
 
 6. Build cocker.
 
