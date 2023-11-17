@@ -46,7 +46,9 @@
 
    <target name='compile' depends='setup' >
       <mkdir dir='java' />
-      <javac srcdir='javasrc' destdir='java' debug='on' deprecation='on' includeantruntime='false'>
+      <javac srcdir='javasrc' destdir='java' debug='on' deprecation='on'
+		source='10' target='10'
+		includeantruntime='false'>
 	 <classpath refid='cocker.classpath' />
       </javac>
    </target>
@@ -134,6 +136,7 @@
       </jar>
       <copy file='cocker.jar' tofile='${PRO}/cocker/lib/cocker.jar' verbose='true' />
       <copy file='cocker.jar' tofile='${PRO}/ivy/lib/cocker.jar' verbose='true' />
+      <copy file='cocker.jar' tofile='${PRO}/bubbles/lib/cocker.jar' verbose='true' />
    </target>
 
 </project>
