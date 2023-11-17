@@ -1,4 +1,4 @@
-# Cocker
+q Cocker
 
 Cocker is a code search technique. It takes as input a piece of code and finds code that is syntactically similar to it in a code database.
 
