@@ -10,12 +10,12 @@ set C = ( /vol/fullCorpus )
 
 $COCKER_HOME/bin/cockercmd -a $A -stop
 
-$COCKER_HOME/bin/cockerdb -a $A new
+$COCKER_HOME/bin/cockerdb -a $A new -dir $COCKER_INDEX
 
-$COCKER_HOME/bin/cockercmd -a $A start -M 16000
+$COCKER_HOME/bin/cockercmd -a $A start -M 16000 -dir $COCKER_INDEX
 
 foreach i ( $C )
-   $COCKER_HOME/bin/cockercmd -a $A -m $i
+   $COCKER_HOME/bin/cockercmd -a $A -m $i -dir $COCKER_INDEX
 end
 
 
