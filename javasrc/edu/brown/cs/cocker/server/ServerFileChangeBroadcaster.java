@@ -128,13 +128,11 @@ private ServerFileChangeBroadcaster()
       catch (SQLException e) {
 	 laste = e;
        }
-      try {
+      try (Connection c = IvyDatabase.openDefaultDatabase()) {
          IvyLog.logI("SERVER","Creating initial database");
-         Connection c = IvyDatabase.openDefaultDatabase();
          Statement statement = c.createStatement();
          String create = "CREATE DATABASE " + dbname;
          statement.executeUpdate(create);
-         c.close();
          setup = true;
        }
       catch (SQLException e) {
