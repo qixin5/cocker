@@ -15,21 +15,21 @@ import edu.brown.cs.cocker.analysis.*;
 public class StmtSearchGlobal
 {
     public static void main(String[] args) {
-	String query_fpath = args[0];
-	String query_stmt_loc = args[1];
-	int stmts_lookat_in_method = 2;
-	String query_method_loc = getQueryMethodLoc(query_fpath, query_stmt_loc);
-
-	//Invoke cocker to obtain a list of similar methods
-	String[] args_global = new String[] { "-a", "kgram3wordmd", "-data", query_method_loc, query_fpath };
-	String global_rslt = new ApplicationChunkQuery(args_global).execute();
-
-
-	//Fetch similar statements in each method
-	String global_rslt_in_stmts = getSimilarStmts(global_rslt, stmts_lookat_in_method, query_fpath, query_stmt_loc);
-
-
-	System.out.println(global_rslt_in_stmts);
+        String query_fpath = args[0];
+        String query_stmt_loc = args[1];
+        int stmts_lookat_in_method = 2;
+        String query_method_loc = getQueryMethodLoc(query_fpath, query_stmt_loc);
+    
+        //Invoke cocker to obtain a list of similar methods
+        String[] args_global = new String[] { "-a", "kgram3wordmd", "-data", query_method_loc, query_fpath };
+        String global_rslt = new ApplicationChunkQuery(args_global).execute();
+    
+    
+        //Fetch similar statements in each method
+        String global_rslt_in_stmts = getSimilarStmts(global_rslt, stmts_lookat_in_method, query_fpath, query_stmt_loc);
+    
+    
+        System.out.println(global_rslt_in_stmts);
     }
 
     private static String getSimilarStmts(String global_rslt, int stmts_lookat_in_method, String query_fpath, String query_stmt_loc) {

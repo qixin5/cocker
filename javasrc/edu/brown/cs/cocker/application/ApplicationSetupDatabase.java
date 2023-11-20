@@ -237,6 +237,9 @@ private void createNewDatabase()
       System.err.println("Upon executing " + create);
       //=============      
       statement.executeUpdate(create);
+      statement.close();
+      connection.close();
+      
       ServerFileChangeBroadcaster fscb = ServerFileChangeBroadcaster.getFscb();
       fscb.setupDatabase();
     }
