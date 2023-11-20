@@ -222,13 +222,11 @@ private void createNewDatabase()
    removeDatabase(false);
 
    String dbname = AnalysisConstants.Factory.getAnalysisType().getDatabaseName();
-
-   try {
-      //=============
-      System.err.println("To make a connection.");
-      //=============      
-      Connection connection = IvyDatabase.openDefaultDatabase();
-      //=============
+   
+   System.err.println("To make a connection.");
+   
+   Connection connection = null;
+   try (Connection connectionn = IvyDatabase.openDefaultDatabase()) {
       System.err.println("Established the connection.");
       //=============      
       Statement statement = connection.createStatement();
@@ -238,7 +236,6 @@ private void createNewDatabase()
       //=============      
       statement.executeUpdate(create);
       statement.close();
-      connection.close();
       
       ServerFileChangeBroadcaster fscb = ServerFileChangeBroadcaster.getFscb();
       fscb.setupDatabase();
@@ -253,27 +250,17 @@ private void createNewDatabase()
 private void removeDatabase(boolean report)
 {
    String dbname = AnalysisConstants.Factory.getAnalysisType().getDatabaseName();
-   Connection connection = null;
    String drop = "DROP DATABASE " + dbname;
-   try {
-      connection = IvyDatabase.openDefaultDatabase();
+   try (Connection connection = IvyDatabase.openDefaultDatabase()) {
       Statement statement = connection.createStatement();
       
       statement.executeUpdate(drop);
-      connection.close();
     }
    catch (SQLException e) { 
       if (report) {
          System.err.println("Problem dropping database: " + drop);
          e.printStackTrace();
        }
-    }
-   finally {
-      try {
-	 if (connection != null) connection.close();
-       }
-      catch (SQLException e) { }
-      connection = null;
     }
    
    try {
