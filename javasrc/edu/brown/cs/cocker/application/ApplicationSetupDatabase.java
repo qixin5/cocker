@@ -225,8 +225,7 @@ private void createNewDatabase()
    
    System.err.println("To make a connection.");
    
-   Connection connection = null;
-   try (Connection connectionn = IvyDatabase.openDefaultDatabase()) {
+   try (Connection connection = IvyDatabase.openDefaultDatabase()) {
       System.err.println("Established the connection.");
       //=============      
       Statement statement = connection.createStatement();
